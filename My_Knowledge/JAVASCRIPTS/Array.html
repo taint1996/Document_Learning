@@ -1,0 +1,75 @@
+<!-- /////////////////////////// Iterate with JavaScript While Loops /////////////////////// -->
+var myArr1 = [];
+var i = 0;
+// Only change code below this line.
+while (i < 5) {
+    myArr1.push(i);
+    i++;
+}
+
+<!-- /////////////////////////// Iterate with JavaScript For Loops /////////////////////// -->
+var myArr2 = [];
+for (var i = 1; i <= 5; i++)
+{
+  myArr2.push(i);
+}
+
+<!-- /////////////////////////// Iterate Odd Numbers with JavaScript While Loops /////////////////////// -->
+var myArr3 = [];
+
+for(var i = 1; i <= 9; i+=2)
+{
+  myArr3.push(i);
+}
+
+<!-- myArray should equal [9,7,5,3,1]. -->
+var myArray = [];
+
+// Only change code below this line.
+for(var i = 9; i > 0; i -= 2)
+{
+  myArray.push(i);
+}
+
+<!-- /////////////////////// Basic JavaScript: Iterate Through an Array with a For Loop /////////////////////// -->
+<!-- Declare and initialize a variable total to 0. Use a for loop to add the value of each element of the myArr array to total. -->
+var myArr = [ 2, 3, 4, 5, 6];
+var total = 0;
+// Only change code below this line
+for (var i = 0; i < myArr.length; i++)
+{
+  total += myArr[i];
+}
+
+
+<!-- /////////////////////// Basic JavaScript: Nesting For Loops /////////////////////// -->
+<!-- multiplyAll([[1],[2],[3]]) should return 6
+multiplyAll([[1,2],[3,4],[5,6,7]]) should return 5040
+multiplyAll([[5,1],[0.2, 4, 0.5],[3, 9]]) should return 54 -->
+
+function multiplyAll(arr) {
+  var product = 1;
+  // Only change code below this line
+  for (var i = 0; i < arr.length; i++) {
+    for(var j = 0; j < arr[i].length; j++) {
+      product *= arr[i][j];
+    }
+  }
+  // Only change code above this line
+  return product;
+}
+
+// Modify values below to test your code
+multiplyAll([[1,2],[3,4],[5,6,7]]);
+
+<!-- /////////////////////// Iterate with JavaScript Do...While Loops /////////////////////// -->
+<!-- // Setup -->
+var myArray = [];
+var i = 10;
+
+<!-- // Only change code below this line. -->
+do {
+  myArray.push(i);
+  i++;
+}
+while (i < 10);

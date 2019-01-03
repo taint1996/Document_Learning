@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>jQuery Add/Remove Class Example</title>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+</head>
+<body>
+  <!-- Style Section -->
+  <style type="text/css">
+    .style {
+      font-family: "Clear Sans";
+      font-size: 1.5em;
+      color: #AE0001;
+      font-style: oblique;
+      padding: 1em;
+    }
+
+    .shape {
+      width: 25em;
+      height: 3em;
+      border: 0.1em solid #2c3e50;
+      margin: 5em;
+      line-height: 3em;
+      text-align: center
+    }
+
+    .decoration {
+      text-decoration: underline;
+      font-size: 1.2em;
+      padding: 1em;
+      width: 15em;
+    }
+
+    .color {
+      color: #e74c3c;
+    }
+
+    .background {
+      background-color: #ecf0f1;
+      font-size: 1.2em;
+      padding: 1em;
+      width: 15em;
+    }
+  </style>
+
+  <!-- HTML Section -->
+  <p class="element">I am going to get classes added or removed!</p>
+
+  <h2 class="decoration">This is a click event Add Class</h2>
+
+  <h3 class="decoration">This is a click event Toggle Class<h3>
+
+  <h4 class="decoration">This is a Mouse Over event in Toggle Class<h4>
+  <h5 class="decoration">This is a Mouse Over Leave in Toggle Class<h5>
+
+  <!-- JAVASCRIPT SECTION -->
+  <script type="text/javascript">
+    $('.element').addClass('color style shape');
+
+    $('h2').click(function(e){
+      e.preventDefault();
+      $(this).addClass('shape color');
+      $(this).removeClass('decoration')
+    });
+
+    $('h3').click(function(e){
+      e.preventDefault();
+      $(this).toggleClass('shape color');
+    });
+
+    $('h4').mouseover(function(e){
+      e.preventDefault();
+      $(this).toggleClass('shape color');
+    });
+
+    $('h5').mouseleave(function(e){
+      e.preventDefault();
+      $(this).addClass('shape color');
+      $(this).removeClass('decoration')
+    });
+  </script>
+</body>
+</html>

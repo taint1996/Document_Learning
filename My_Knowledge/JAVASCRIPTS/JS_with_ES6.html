@@ -1,0 +1,14 @@
+<!-- /////////////////////// ES6: Explore Differences Between the var and let Keywords /////////////////////// -->
+////// Because this behavior does not throw an error, searching and fixing bugs becomes more difficult.
+//  A new keyword called let was introduced in ES6 to solve this potential issue with the var keyword.
+let catName;
+let quote;
+
+function catTalk() {
+   "use strict"; <!-- Note the "use strict".
+                   This enables Strict Mode, which catches common coding mistakes and "unsafe" actions. For instance: -->
+
+  catName = "Oliver";
+  quote = catName + " says Meow!"
+}
+catTalk();

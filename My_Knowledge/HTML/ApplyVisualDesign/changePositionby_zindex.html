@@ -1,0 +1,35 @@
+<!-- Change the Position of Overlapping Elements with the z-index Property -->
+<style>
+  div {
+    width: 60px;
+    height: 200px;
+    margin-top: 20px;
+  }
+
+  .first {
+    background-color: red;
+    position: absolute;
+    z-index: 2; /* Các giá trị z-index cao hơn thì có độ ưu tiên cao hơn */
+  }
+
+  .second {
+    background-color: blue;
+    position: absolute;
+    z-index: 1;
+    left: 40px;
+    top: 50px;
+  }
+
+  div {
+    background-color: blue;
+    height: 100px;
+    width: 100px;
+    margin: auto;
+  }
+</style>
+<div class="first"></div>
+<div class="second"></div>
+
+<div class="margin-element">
+  <!-- Center the div on the page by adding a margin property with a value of auto. -->
+</div>

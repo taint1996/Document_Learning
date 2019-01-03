@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>jQuery Datepicker Example</title>
+</head>
+<body>
+  <!-- LINKS SECTION -->
+  <link href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/themes/smoothness/jquery-ui.css" rel="stylesheet" type="text/css"/>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/jquery-ui.min.js"></script>
+  <link href="style.css" rel="stylesheet" type="text/css"/>
+
+
+  <!-- HTML SECTION -->
+  <!-- <input type="text" class="datepicker"/> -->
+
+  <input type="text" class="datepicker-animations" size="30">
+
+  <select class="anim">
+    <option value="show">Show (default)</option>
+    <option value="slideDown">Slide down</option>
+    <option value="fadeIn">Fade in</option>
+    <option value="blind">Blind (UI Effect)</option>
+    <option value="bounce">Bounce (UI Effect)</option>
+    <option value="clip">Clip (UI Effect)</option>
+    <option value="drop">Drop (UI Effect)</option>
+    <option value="fold">Fold (UI Effect)</option>
+    <option value="slide">Slide (UI Effect)</option>
+    <option value="">None</option>
+  </select>
+
+  <!-- DATE IN ORTHER MONTHS -->
+  <input type="text" class="date-in-month"/>
+
+
+  <!-- JAVASCRIPT SECTION -->
+  <script type="text/javascript">
+    $(function() {
+      $( ".datepicker-animations" ).datepicker();
+      $( ".anim" ).change(function() {
+        $( ".datepicker-animations" ).datepicker( "option", "showAnim", $(this).val() );
+      });
+
+      $('.date-in-month').datepicker({
+        showOtherMonths: true,
+        selectOtherMonths: true,
+        changeMonth: true,
+        changeYear: true
+      });
+    });
+  </script>
+</body>
+</html>

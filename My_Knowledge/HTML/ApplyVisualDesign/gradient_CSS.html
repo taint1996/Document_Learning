@@ -1,0 +1,39 @@
+<style>
+  .radial-gradients{
+    border-radius: 50%;
+    width: 400px;
+    height: 400px;
+    margin: 50px auto;
+    background: radial-gradient(circle at 100px 100px, red, black); /* Tạo hình 3D hình cầu đỏ đen */
+  }
+
+  .linear-gradients{
+    border-radius: 20px;
+    width: 70%;
+    height: 400px;
+    margin: 50px auto;
+    background: linear-gradient(35deg, #CCFFFF, #FFCCCC);
+  }
+
+  .repeating-gradients {
+    border-radius: 20px;
+    width: 70%;
+    height: 400px;
+    margin: 50 auto;
+    background: repeating-linear-gradient(
+                                            45deg,
+                                            yellow 0px,
+                                            yellow 40px,
+                                            black 40px,
+                                            black 80px); /* Tạo ra dải màu sọc */
+  }
+
+  /* Background có thẻ dùng url */
+  body {
+    background: url("https://i.imgur.com/MJAkxbh.png");
+  }
+</style>
+
+<div class="radial-gradients">Radial Gradient</div>
+<div class="linear-gradients">Linear Gradient</div>
+<div class="repeating-gradients">Repeating Linear Gradient</div>

@@ -1,0 +1,26 @@
+<style>
+  button {
+    border-radius: 5px;
+    color: white;
+    background-color: #0F5897;
+    padding: 5px 10px 8px 10px;
+  }
+
+  button:hover {
+    animation-name: background-color;
+    animation-duration: 500ms;
+
+    /* This can be done by setting the animation-fill-mode property to forwards.
+    The animation-fill-mode specifies the style applied to an element when the animation has finished */
+    animation-fill-mode: forwards;
+  }
+
+  @keyframes background-color {
+    100% {
+      background-color: #4791d0;
+    }
+  }
+
+</style>
+
+<button>Register</button>

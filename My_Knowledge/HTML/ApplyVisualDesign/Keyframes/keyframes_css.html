@@ -1,0 +1,81 @@
+<!-- To animate an element, you need to know about the animation properties and the @keyframes rule.
+The animation properties control how the animation should behave and the @keyframes rule controls what happens during that animation.
+There are eight animation properties in total. This challenge will keep it simple and cover the two most important ones first:
+
+//////// animation-name sets the name of the animation, which is later used by @keyframes to tell CSS which rules go with which animations.
+//////// animation-duration sets the length of time for the animation.
+
+//////// @keyframes is how to specify exactly what happens within the animation over the duration.
+This is done by giving CSS properties for specific "frames" during the animation, with percentages ranging from 0% to 100%.
+If you compare this to a movie, the CSS properties for 0% is how the element displays in the opening scene.
+The CSS properties for 100% is how the element appears at the end, right before the credits roll.
+Then CSS applies the magic to transition the element over the given duration to act out the scene.
+Here's an example to illustrate the usage of @keyframes and the animation properties -->
+
+<!-- @keyframes dùng cho animation cùng với animation-name, animation-duration phạm vi từ (0% -> 100%) (vd: load % complete) -->
+
+<style>
+  div {
+    height: 40px;
+    width: 70%;
+    background: black;
+    border-radius: 5px;
+    margin: 50px auto;
+    position: relative;
+  }
+
+  #rect {
+    /* auto 3s run percent from Mr.Phuong */
+    /* animation: rainbow 3s linear infinite; */
+
+    animation-name: rainbow;
+    animation-duration: 4s;
+  }
+
+  #rect1 {
+    animation-name: rainbow1;
+    animation-duration: 4s;
+    padding-top: 15px;
+    text-align: center;
+    color: white;
+    font-weight: 600;
+  }
+
+  @keyframes rainbow1{
+    0% {
+      background-color: blue;
+      top: 0px;
+      left: 0px;
+    }
+
+    50% {
+      background-color: green;
+      top: 50px;
+      left: 25px;
+    }
+
+    100% {
+      background-color: yellow;
+      top: 0px;
+      left: -25px;
+    }
+  }
+
+  @keyframes rainbow {
+    0% {
+      background-color: blue;
+    }
+
+    50% {
+      background-color: green;
+    }
+
+    100% {
+      background-color: yellow;
+    }
+  }
+</style>
+
+<div id="rect"></div>
+
+<div id="rect1">Movement using CSS Animation</div>
