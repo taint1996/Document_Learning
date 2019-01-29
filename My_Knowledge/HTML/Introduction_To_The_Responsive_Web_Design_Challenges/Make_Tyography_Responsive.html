@@ -1,0 +1,31 @@
+<!-- Thay vì sử dụng em hoặc px để chỉnh kích thước văn bản, 
+    bạn có thể sử dụng các đơn vị khung nhìn cho kiểu chữ đáp ứng. Các đơn vị Viewport, 
+    như tỷ lệ phần trăm, là các đơn vị tương đối, nhưng chúng dựa trên các mục khác nhau. 
+    
+    *** Đơn vị khung nhìn có liên quan đến kích thước khung nhìn (chiều rộng hoặc chiều cao) 
+    của thiết bị và tỷ lệ phần trăm tương đối với kích thước của phần tử bộ chứa mẹ.
+-->
+<!-- The four different viewport units are (Bốn đơn vị khung nhìn khác nhau là):
+    vw: 10vw would be 10% of the viewport's width. (sẽ là 10% chiều rộng của khung nhìn.)
+    vh: 3vh would be 3% of the viewport's height. (sẽ là 10% chiều cao của khung nhìn.)
+    vmin: 70vmin would be 70% of the viewport's smaller dimension (height vs. width). (sẽ là 70% kích thước nhỏ hơn của khung nhìn (chiều cao so với chiều rộng)
+    vmax: 100vmax would be 100% of the viewport's bigger dimension (height vs. width). sẽ là 100% kích thước lớn hơn của khung nhìn (chiều cao so với chiều rộng). 
+-->
+
+<style>
+    h2 {
+        width: 80vw;
+    }
+
+    p {
+        width: 75vmin;
+    }
+</style>
+
+<h2>Importantus Ipsum</h2>
+<p>
+    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus quis tempus massa. Aenean erat nisl, gravida vel
+    vestibulum cursus, interdum sit amet lectus. Sed sit amet quam nibh. Suspendisse quis tincidunt nulla. In hac
+    habitasse platea dictumst. Ut sit amet pretium nisl. Vivamus vel mi sem. Aenean sit amet consectetur sem.
+    Suspendisse pretium, purus et gravida consequat, nunc ligula ultricies diam, at aliquet velit libero a dui.
+</p>
