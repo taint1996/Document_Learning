@@ -25,3 +25,5 @@ const iceCreams = [{
 ];
 
 const getFlavourRed = iceCreams.filter(i => i.color === "red")
+
+const sameColor = (color) => { return iceCreams.filter(i => i.color === color) } ;
