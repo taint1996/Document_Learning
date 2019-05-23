@@ -257,4 +257,4 @@ details_item_row_content_to_excel = CrawlingNhaThuocAnKhang.save_to_excel(home[1
 
 end_at = (time.time() - start) / 60
 print("Finished Crawling Data at: {} minute".format(end_at))
-#############################################################3########################################
+######################################################################################################
