@@ -21,7 +21,7 @@ class ThuocBietDuoc:
     book = xlwt.Workbook(encoding='utf-8', style_compression = 0)
     sheet = book.add_sheet(sheet_name, cell_overwrite_ok = True)
 
-    first_rows = ("url", "ten_thuoc", "img", "nhom_thuoc", "dang_bao_che", "dong_goi", "thanh_phan", "sdk", "nha_san_xuat", "nha_dang_ky", "nha_phan_phoi", "chi_dinh", "lieuluong_cachdung", "chong_chi_dinh", "tac_dung_phu", "chu_y_de_phong", "duoc_luc", "duoc_dong_hoc", "tac_dung", "tac_dung_phu")
+    first_rows = ("url", "ten_thuoc", "img", "nhom_thuoc", "dang_bao_che", "dong_goi", "thanh_phan", "sdk", "nha_san_xuat", "nha_dang_ky", "nha_phan_phoi", "chi_dinh", "lieuluong_cachdung", "chong_chi_dinh", "chu_y_de_phong", "duoc_luc", "duoc_dong_hoc", "tac_dung", "tac_dung_phu")
 
     i = 0
     # Title Default in first line
@@ -36,19 +36,6 @@ class ThuocBietDuoc:
       a = sheet.write(0, i, first_rows[i], style=style)
       i = i + 1
     book.save("{}.xls".format(excel_name))
-
-  # Get all href menu on homepage
-  # def start_request_get_home_page(self):
-  #   response = requests.get(self, timeout=10, stream=True).text
-  #   soup = BeautifulSoup(response, "html.parser")
-  #   first_list = soup.find_all("div", attrs={"class": "clearfix_menu", "id": "menu")
-
-  #   urls = []
-
-  #   for item in first_list.find("div", attrs={"class": "ddcolortabs", "id": "ddtabs4"):
-  #     get_urls_navbar = item.find('a').get("href")
-  #     urls.append("{}{}".format(self, get_urls_navbar))
-  #   return urls
 
   def start_request_get_list(self, url):
     response = requests.get(self, timeout=10, stream=True)
@@ -67,48 +54,6 @@ class ThuocBietDuoc:
       urls.append("{}{}".format(url, get_hrefs[2:]))
       names.append(name)
     return urls, names
-
-  # def start_requests_post_list(self, post_url, url):
-  #   n = 1
-  #   urls = []
-  #   names = []
-  #   prices = []
-  #   while n:
-  #     form_data = {
-  #       "Key": "",
-  #       "PageSize": "10",
-  #       "PageIndex": n,
-  #       "Category": "0",
-  #       "ListIsNotMedCate": "",
-  #       "IsFunctionFood": "True"
-  #     }
-
-  #     r = requests.post(post_url, data = form_data)
-
-  #     if r.status_code == 200 and r.status_code is not None:
-  #       more_soup = BeautifulSoup(r.text, "html.parser")
-
-  #       next_lists = more_soup.find("div", id="product")
-
-  #       for item in next_lists.find_all('li', {'class': ''}):
-  #         more_item_urls = item.find('a').get("href")
-
-  #         check_url = url in more_item_urls
-  #         if check_url is False:
-  #           more_item_urls = "{}/{}".format(self, more_item_urls.split("/")[2])
-  #         urls.append(more_item_urls)
-
-  #         # get names
-  #         get_names = item.find('h3').text
-  #         names.append("".join(get_names.strip()))
-
-  #         # get price
-  #         get_price = item.find('div', class_="price").text
-  #         prices.append("".join(get_price.strip()))
-  #     else:
-  #         break
-  #     n = n + 1
-  #   return urls, names, prices
 
   def save_to_excel(self, sheet_name, data, row, column):
     rb = open_workbook(sheet_name, formatting_info=True)
@@ -139,113 +84,231 @@ class ThuocBietDuoc:
 
       wb.save(sheet_name)
 
+  def save_text_to_excel(self, sheet_name, text_data, row, column):
+    rb = open_workbook(sheet_name, formatting_info=True)
+
+    r_sheet = rb.sheet_by_index(0)
+    wb = copy(rb)
+    sheet = wb.get_sheet(0)
+
+    writing = sheet.write(row, column, text_data)
+    # print(len(sheet._Worksheet__rows)) # count row in sheet
+    # print(r_sheet.nrows)
+    wb.save(sheet_name)
+
+  def check_presence_find_next_tag_by_find(tag, tag_name):
+    if tag is None:
+      tag = ""
+    else:
+      tag = tag.find_next("{}".format(tag_name)).get_text(strip=True)
+
+  def check_presence_find_next_div_by_find_all(tag_contents, text_info):
+    for content in tag_contents:
+      if content is None:
+        content = ""
+      else:
+        text_info = (text_info.strip() + "\n" + content.find_next("div").get_text(strip=True)).strip()
+
+  def save_detail_drug_to_excel(url, data, detail_url):
+    default_url = "https://www.thuocbietduoc.com.vn"
+    url = "https://www.thuocbietduoc.com.vn/nhom-thuoc-1-0/thuoc-gay-te-me.aspx"
+
+    sheet_name = url.split("/")[-1][:-5] # thuoc-gay-te-me
+    excel_name = default_url.split("/")[2][4:-7] # thuocbietduoc
+    excel_name_file = "{}.xls".format(excel_name) # thuocbietduoc.xls
+
+    excel = ThuocBietDuoc.create_excel_file(detail_url, sheet_name, excel_name)
+    i = 0
+    line = 1
+
+    while i < len(data):
+      with requests.Session() as s:
+        res = s.get(data[i], timeout=5, stream=True)
+        soup = BeautifulSoup(res.text,"lxml")
+
+        find_soup = soup.find("article")
+        print("================= data", data[i])
+        ThuocBietDuoc.save_text_to_excel(data[i], excel_name_file, data[i], line, 0)
+
+        # Tên thuốc
+        ten_thuoc = find_soup.h1
+        if not ten_thuoc:
+          ten_thuoc = ""
+        else:
+          ten_thuoc = ten_thuoc.get_text(strip=True)
+        ThuocBietDuoc.save_text_to_excel(url, excel_name_file, ten_thuoc, line, 1)
+
+        # img
+        img = find_soup.find("img", class_="imgdrg_lst")
+        if not img:
+          img = ""
+        else:
+          img = img.get("src")
+        ThuocBietDuoc.save_text_to_excel(url, excel_name_file, img, line, 2)
+
+        # nhom_thuoc
+        nhom_thuoc = find_soup.find('a', class_="textdetaillink")
+        if not nhom_thuoc:
+          nhom_thuoc = ""
+        else:
+          nhom_thuoc = nhom_thuoc.get("title")
+        ThuocBietDuoc.save_text_to_excel(url, excel_name_file, nhom_thuoc, line, 3)
+
+        # Dạng bào chế
+        dang_bao_che = find_soup.find("span", class_="textdetailhead1", string=re.compile("Dạng bào chế"))
+        if not dang_bao_che:
+          dang_bao_che = ""
+        else:
+          dang_bao_che = dang_bao_che.find_next('span').get_text(strip=True)
+        ThuocBietDuoc.save_text_to_excel(url, excel_name_file, dang_bao_che, line, 4)
+
+        #  Đóng gói
+        dong_goi = find_soup.find("span", string=re.compile("Đóng gói"))
+        if not dong_goi:
+          dong_goi = ""
+        else:
+          dong_goi = dong_goi.find_next('span').get_text(strip=True)
+        ThuocBietDuoc.save_text_to_excel(url, excel_name_file, dong_goi, line, 5)
+
+
+        # Thành phần
+        thanh_phan = find_soup.find(string=re.compile("Thành phần"))
+        if not thanh_phan:
+          thanh_phan = ""
+        else:
+          thanh_phan = thanh_phan.find_next('span').get_text(strip=True)
+        ThuocBietDuoc.save_text_to_excel(url, excel_name_file, thanh_phan, line, 6)
+
+        # SDK
+        sdk = find_soup.find(string=re.compile("SĐK"))
+        if not sdk:
+          sdk = ""
+        else:
+          sdk = sdk.find_next('span').get_text(strip=True)
+        ThuocBietDuoc.save_text_to_excel(url, excel_name_file, sdk, line, 7)
+
+        # Nhà sản xuất
+        nha_san_xuat = find_soup.find(string=re.compile("Nhà sản xuất"))
+        if not nha_san_xuat:
+          nha_san_xuat = ""
+        else:
+          nha_san_xuat = nha_san_xuat.find_next('span').get_text(strip=True)
+        ThuocBietDuoc.save_text_to_excel(url, excel_name_file, nha_san_xuat, line, 8)
+
+        # Nhà đăng ký
+        nha_dang_ky = find_soup.find(string=re.compile("Nhà đăng ký"))
+        if not nha_dang_ky:
+          nha_dang_ky = ""
+        else:
+          nha_dang_ky = nha_dang_ky.find_next('span').get_text(strip=True)
+        # print(">>>>>>>>>", nha_dang_ky)
+        ThuocBietDuoc.save_text_to_excel(url, excel_name_file, nha_dang_ky, line, 9)
+
+        # Nhà phân phối
+        nha_phan_phoi = find_soup.find(id="lblnhapp", string=re.compile("Nhà phân phối"))
+        if not nha_phan_phoi:
+          nha_phan_phoi = ""
+        else:
+          nha_phan_phoi = nha_phan_phoi.find_next('td').get_text(strip=True)
+        ThuocBietDuoc.save_text_to_excel(url, excel_name_file, nha_phan_phoi, line, 10)
+
+        # chỉ định
+        chi_dinhs = find_soup.find_all(string=re.compile("Chỉ định"))
+        chi_dinh = ""
+        # ThuocBietDuoc.check_presence_find_next_div_by_find_all(chi_dinhs, chi_dinh)
+        for content in chi_dinhs:
+          if content is None:
+            content = ""
+          else:
+            chi_dinh = (chi_dinh.strip() + "\n" + content.find_next("div").get_text(strip=True)).strip()
+        ThuocBietDuoc.save_text_to_excel(url, excel_name_file, chi_dinh, line, 11)
+
+        # Liều lượng - cách dùng
+        lieuluong_cachdungs = find_soup.find_all(string=re.compile("Liều lượng - cách dùng"[1:].lower()))
+
+        lieuluong_cachdung = ""
+        for content in lieuluong_cachdungs:
+          if content is None:
+            content = ""
+          else:
+            lieuluong_cachdung = (lieuluong_cachdung.strip() + "\n" + content.find_next("div").get_text(strip=True)).strip()
+        # ThuocBietDuoc.check_presence_find_next_div_by_find_all(lieuluong_cachdungs, lieuluong_cachdung)
+        # print(">>>>>>>>>", lieuluong_cachdung)
+        ThuocBietDuoc.save_text_to_excel(url, excel_name_file, lieuluong_cachdung, line, 12)
+
+        # chống chỉ định
+        chong_chi_dinhs = find_soup.find_all(string=re.compile("Chống chỉ định"[1:].lower()))
+
+        chong_chi_dinh = ""
+        for content in chong_chi_dinhs:
+          if content is None:
+            content = ""
+          else:
+            chong_chi_dinh = (chong_chi_dinh.strip() + "\n" + content.find_next("div").get_text(strip=True)).strip()
+        # ThuocBietDuoc.check_presence_find_next_div_by_find_all(chong_chi_dinhs, chong_chi_dinh)
+        # print(">>>>>>>>>", chong_chi_dinh)
+        ThuocBietDuoc.save_text_to_excel(url, excel_name_file, chong_chi_dinh, line, 13)
+
+
+        # Chú ý đề phòng
+        chu_y_de_phong = find_soup.find("h2", class_="textdetailhead1", string=re.compile("Chú ý đề phòng"))
+        if not chu_y_de_phong:
+          chu_y_de_phong = ""
+        else:
+          chu_y_de_phong = chu_y_de_phong.find_next("div").get_text(strip=True)
+        ThuocBietDuoc.save_text_to_excel(url, excel_name_file, chu_y_de_phong, line, 14)
+
+        ######### Thông tin thành phần
+        # Dược lực
+        duoc_luc = find_soup.find("h3", string=re.compile("Dược lực"))
+        if not duoc_luc:
+          duoc_luc = ""
+        else:
+          duoc_luc = duoc_luc.find_next("div").get_text(strip=True)
+        ThuocBietDuoc.save_text_to_excel(url, excel_name_file, duoc_luc, line, 15)
+
+        # Dược động học
+        duoc_dong_hoc = find_soup.find("h3", string=re.compile("Dược động học"))
+        if not duoc_dong_hoc:
+          duoc_dong_hoc = ""
+        else:
+          duoc_dong_hoc = duoc_dong_hoc.find_next("div").get_text(strip=True)
+        ThuocBietDuoc.save_text_to_excel(url, excel_name_file, duoc_dong_hoc, line, 16)
+
+        # Tác dụng
+        tac_dung = find_soup.find("h3", string="Tác dụng :")
+        if not tac_dung:
+          tac_dung = ""
+        else:
+          tac_dung = tac_dung.find_next("div").get_text(strip=True)
+        # ThuocBietDuoc.check_presence_find_next_tag_by_find(tac_dung, "div")
+        ThuocBietDuoc.save_text_to_excel(url, excel_name_file, tac_dung, line, 17)
+
+        # Tác dụng phụ
+        tac_dung_phus = find_soup.find_all("section", id=re.compile("tac-dung-phu"), string=re.compile("Tác dụng phụ"[1:].lower()))
+        tac_dung_phu = ""
+        for content in tac_dung_phus:
+          if content is None:
+            content = ""
+          else:
+            tac_dung_phu = (tac_dung_phu.strip() + "\n" + content.find_next("div").get_text(strip=True)).strip()
+        ThuocBietDuoc.save_text_to_excel(url, excel_name_file, tac_dung_phu, line, 18)
+        line = line + 1
+      i = i + 1
+
 ##### Get urls href base on navbar index page
 
 default_url = "https://www.thuocbietduoc.com.vn"
 url = "https://www.thuocbietduoc.com.vn/thuoc/drgsearch.aspx"
 
+print(">>>>>>>>>>>>>>>>>> Here We Go ")
+from datetime import datetime
 
-# This  will get all menu home page
-# homepage_url = "https://www.thuocbietduoc.com.vn/home/"
-# home = ThuocBietDuoc.start_request_get_home_page(homepage_url)
+dt_now = datetime.now()
+print("Start at: {}", dt_now)
 
-# sheet_name = home[1].split("/")[-1]
-# excel_name = home[1].split(".")[1]
-
-# excel = ThuocBietDuoc.create_excel_file(url, sheet_name, excel_name)
-# excel_name_file = "{}.xls".format(excel_name) # nhathuocankhang.xls
-
-# to_excel = ThuocBietDuoc.create_excel_file(url, excel_name_file, home[1], 1, 0)
-
-# ######################################## Nhóm thuốc ########################################
-start = time.time()
-
+# ######################################## List URL Nhóm thuốc ########################################
 medicine_group_urls = ThuocBietDuoc.start_request_get_list(url, default_url)
-# excel = ThuocBietDuoc.create_excel_file(url, sheet_name, excel_name)
-
-# go to page drug
-# TODO: test get 1 url
-# res = requests.get(medicine_group_urls[0][0], timeout=10, stream=True)
-# soup = BeautifulSoup(res.text, "html.parser")
-# find_soup = soup.find("table", attrs={"class": "text2", "id": "Tabl1"})
-
-# find_a_href = find_soup.find_all("a", class_="textlink01_v")
-
-# default_href_to_details = []
-
-# for url in find_a_href:
-#   url_href = url.get("href")
-
-#   # check unique url href
-#   if url_href not in default_href_to_details:
-#     default_href_to_details.append(url_href)
-
-# print("all detail url", default_href_to_details)
-
-################################### TODO: DONT DELETE HERE ########################
-# get_default_medicine_group_urls = []
-# i = 0
-# while i < len(medicine_group_urls[0]):
-#   res = requests.get(medicine_group_urls[0][i], timeout=10, stream=True)
-#   soup = BeautifulSoup(res.text, "html.parser")
-#   find_soup = soup.find("table", attrs={"class": "text2", "id": "Tabl1"})
-
-#   find_a_href = find_soup.find_all("a", class_="textlink01_v")
-
-#   for url in find_a_href:
-#     url_href = "{}{}".format(default_url, url.get("href")[2:])
-
-#     # check unique url href
-#     if url_href not in get_default_medicine_group_urls:
-#       get_default_medicine_group_urls.append(url_href)
-#   i = i + 1
-
-# print("total: ", len(get_default_medicine_group_urls))
-
-################################### TODO: This is Special for me  ########################
-# post_url_medicine_group_urls = []
-# i = 0
-# total = []
-# while i < len(medicine_group_urls[0]):
-#   with requests.Session() as s:
-#     s.headers={
-#                 "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.131 Safari/537.36"
-#               }
-
-#     res = s.get(medicine_group_urls[0][i], timeout=20, stream=True)
-#     soup = BeautifulSoup(res.text,"lxml")
-#     n = 1
-#     while True:
-#       payload = {item['name']:item.get('value','') for item in soup.select("input[name]")}
-#       payload['__VIEWSTATEGENERATOR'] = '336E2262'
-#       payload['Drugnews1$Gr1'] = 'Rdrgnm'
-#       payload['page'] = n
-#       payload['__VIEWSTATEENCRYPTED'] = None
-#       payload['currentView'] = '1'
-#       req = s.post(medicine_group_urls[0][i], data=payload, headers=s.headers)
-#       soup_obj = BeautifulSoup(req.text,"html.parser")
-
-#       find_soup = soup_obj.find("table", attrs={"class": "text2", "id": "Tabl1"})
-
-#       find_a_href = find_soup.find_all("a", class_="textlink01_v")
-#       if len(find_a_href) == 0:
-#         print("Did we going here?")
-#         break
-
-#       for url in find_a_href:
-#         url_href = "{}{}".format(default_url, url.get("href")[2:])
-
-#         # check unique url href
-#         if url_href not in post_url_medicine_group_urls:
-#           print(url_href)
-#           post_url_medicine_group_urls.append(url_href)
-            # total.append(len(post_url_medicine_group_urls))
-#       n = n + 1
-#   i = i + 1
-#   print("============================= Post urls ", post_url_medicine_group_urls)
-#   print("Total URLs", sum(total))
-######################################################################################
-
 
 i = 0
 total = []
@@ -278,11 +341,13 @@ while i < len(medicine_group_urls[0]):
       for url in find_a_href:
         url_href = "{}{}".format(default_url, url.get("href")[2:])
         name_drug = url_href[:-5].split("/")[-1] # Get name drug
-        # check unique url href
+
+        # check unique url href #TODO: check later
         ############### name drug use to uniq drug
         if url_href not in urls_medicine_groups: # and name_drug not in urls_medicine_groups:
-          print(url_href)
           urls_medicine_groups.append(url_href)
+          ################################################### Save record to Excel #########################################
+          ThuocBietDuoc.save_detail_drug_to_excel(url_href, urls_medicine_groups, url_href)
 
       n = n + 1
   print("============================= Post urls ", urls_medicine_groups)
@@ -293,271 +358,6 @@ while i < len(medicine_group_urls[0]):
   i = i + 1
 
 
+end = (datetime.now() - start)
 
-
-
-
-######################### TODO: Create Excel file
-# sheet_name = medicine_group_urls[0][0].split("/")[-1][:-5] # thuoc-gay-te-me
-# excel_name = default_url.split("/")[2][4:-7] # thuocbietduoc
-# excel_name_file = "{}.xls".format(excel_name) # thuocbietduoc.xls
-# print("Sheet name", sheet_name)
-# print("excel name: ", excel_name)
-# print("name file: ", excel_name_file)
-# excel = ThuocBietDuoc.create_excel_file(medicine_group_urls[0][0], sheet_name, excel_name)
-
-##### Save to excel
-# to_excel = ThuocBietDuoc.save_to_excel(medicine_group_urls[0][0], excel_name_file, post_url_medicine_group_urls, 1, 0)
-
-
-################################################### Save record to Excel #########################################
-# def save_detail_drug_to_excel():
-i = 0
-line = 1
-while i < len(urls_medicine_groups):
-  with requests.Session() as s:
-    res = s.get(urls_medicine_groups[i], timeout=5, stream=True)
-    soup = BeautifulSoup(res.text,"lxml")
-
-    find_soup = soup.find("article")
-    save_text_to_excel(url, excel_name_file, detail_url, line, 0)
-
-    # Tên thuốc
-    ten_thuoc = find_soup.h1.get_text(strip=True)
-    # print(">>>>>>>>>", ten_thuoc)
-    save_text_to_excel(url, excel_name_file, ten_thuoc, line, 1)
-
-    # img
-    img = find_soup.find("img", class_="imgdrg_lst").get("src")
-    # print(">>>>>>>>>", img)
-    save_text_to_excel(url, excel_name_file, img, line, 2)
-
-    nhom_thuoc = find_soup.find('a', class_="textdetaillink").get("title")
-    # print(">>>>>>>>>", nhom_thuoc)
-    save_text_to_excel(url, excel_name_file, nhom_thuoc, line, 3)
-
-    dang_bao_che = find_soup.find(string=re.compile("Dạng bào chế")).find_next('span').get_text(strip=True)
-    # print(">>>>>>>>>", dang_bao_che)
-    save_text_to_excel(url, excel_name_file, dang_bao_che, line, 4)
-
-    dong_goi = find_soup.find(string=re.compile("Đóng gói")).find_next('span').get_text(strip=True)
-    # print(">>>>>>>>>", dong_goi)
-    save_text_to_excel(url, excel_name_file, dong_goi, line, 5)
-
-    thanh_phan = find_soup.find(string=re.compile("Thành phần")).find_next('span').get_text(strip=True)
-    # print(">>>>>>>>>", thanh_phan)
-    save_text_to_excel(url, excel_name_file, thanh_phan, line, 6)
-
-    sdk = find_soup.find(string=re.compile("SĐK")).find_next('span').get_text(strip=True)
-    # print(">>>>>>>>>", sdk)
-    save_text_to_excel(url, excel_name_file, sdk, line, 7)
-
-    nha_san_xuat = find_soup.find(string=re.compile("Nhà sản xuất")).find_next('span').get_text(strip=True)
-    # print(">>>>>>>>>", nha_san_xuat)
-    save_text_to_excel(url, excel_name_file, nha_san_xuat, line, 8)
-
-    nha_dang_ky = find_soup.find(string=re.compile("Nhà đăng ký")).find_next('span').get_text(strip=True)
-    # print(">>>>>>>>>", nha_dang_ky)
-    save_text_to_excel(url, excel_name_file, nha_dang_ky, line, 9)
-
-    nha_phan_phoi = find_soup.find(string=re.compile("Nhà phân phối")).parent.parent.find_next('td').get_text(strip=True)
-    # print(">>>>>>>>>", nha_phan_phoi)
-    save_text_to_excel(url, excel_name_file, nha_phan_phoi, line, 10)
-
-    # chỉ định
-    chi_dinhs = find_soup.find_all(string=re.compile("Chỉ định"))
-    chi_dinh = ""
-    for content in chi_dinhs:
-      if not content:
-        content = ""
-      else:
-        chi_dinh = chi_dinh.strip() + "\n" + content.find_next("div").get_text(strip=True).strip()
-    # print(">>>>>>>>> chi dinh", chi_dinh)
-    save_text_to_excel(url, excel_name_file, chi_dinh, line, 11)
-
-    # Liều lượng - cách dùng
-    lieuluong_cachdungs = find_soup.find_all(string=re.compile("Liều lượng - cách dùng"[1:].lower()))
-
-    lieuluong_cachdung = ""
-    for content in lieuluong_cachdungs:
-      if not content:
-        content = ""
-      else:
-        lieuluong_cachdung = (lieuluong_cachdung.strip() + "\n" + content.find_next("div").get_text(strip=True)).strip()
-    # print(">>>>>>>>>", lieuluong_cachdung)
-    save_text_to_excel(url, excel_name_file, lieuluong_cachdung, line, 12)
-
-    # chống chỉ định
-    chong_chi_dinhs = find_soup.find_all(string=re.compile("Chống chỉ định"[1:].lower()))
-
-    chong_chi_dinh = ""
-    for content in chong_chi_dinhs:
-      if not content:
-        content = ""
-      else:
-        chong_chi_dinh = chong_chi_dinh.strip() + "\n" + content.find_next("div").get_text(strip=True).strip()
-    # print(">>>>>>>>>", chong_chi_dinh)
-    save_text_to_excel(url, excel_name_file, chong_chi_dinh, line, 13)
-
-    tac_dung_phu = find_soup.find(string=re.compile("Tác dụng phụ")).find_next("div").get_text(strip=True)
-    # print(">>>>>>>>>", tac_dung_phu)
-    save_text_to_excel(url, excel_name_file, tac_dung_phu, line, 14)
-
-    chu_y_de_phong = find_soup.find(string=re.compile("Chú ý đề phòng")).find_next("div").get_text(strip=True)
-    # print(">>>>>>>>>", chu_y_de_phong)
-    save_text_to_excel(url, excel_name_file, chu_y_de_phong, line, 15)
-
-    ######### Thông tin thành phần
-    duoc_luc = find_soup.find("h3", string=re.compile("Dược lực")).find_next("div").get_text(strip=True)
-    # print(">>>>>>>>>", duoc_luc)
-    save_text_to_excel(url, excel_name_file, duoc_luc, line, 16)
-
-    duoc_dong_hoc = find_soup.find("h3", string=re.compile("Dược động học"))
-    if not duoc_dong_hoc:
-      duoc_dong_hoc = ""
-    else:
-      duoc_dong_hoc = duoc_dong_hoc.find_next("div").get_text(strip=True)
-    # print(">>>>>>>>>", duoc_dong_hoc)
-    save_text_to_excel(url, excel_name_file, duoc_dong_hoc, line, 17)
-
-    # Tác dụng
-    tac_dung = find_soup.find("h3", string=re.compile("Tác dụng")).find_next("div").get_text(strip=True)
-    # print(">>>>>>>>>", tac_dung)
-    save_text_to_excel(url, excel_name_file, tac_dung, line, 18)
-
-    # Tác dụng phụ
-    tac_dung_phus = find_soup.find_all(string=re.compile("Tác dụng phụ"[1:].lower()))
-
-    tac_dung_phu = ""
-    for content in tac_dung_phus:
-      if not content:
-        content = ""
-      else:
-        tac_dung_phu = (tac_dung_phu.strip() + "\n" + content.find_next("div").get_text(strip=True)).strip()
-    # print(">>>>>>>>>", tac_dung_phu)
-    save_text_to_excel(url, excel_name_file, tac_dung_phu, line, 19)
-    line = line + 1
-  i = i + 1
-
-end = (time.time() - start) / 60
-
-print("We spent {} minute to done this", end)
-
-
-###################################################### Detail drug 1 Record ###########################################
-
-# row = 1
-# with requests.Session() as s:
-#   res = s.get(url_details[1], timeout=5, stream=True)
-#   soup = BeautifulSoup(res.text,"lxml")
-
-#   find_soup = soup.find("article")
-#   save_text_to_excel(url, excel_name_file, detail_url, row, 0)
-
-#   # Tên thuốc
-#   drug_name = find_soup.h1.get_text(strip=True)
-#   save_text_to_excel(url, excel_name_file, drug_name, row, 1)
-
-#   url = find_soup.find("img", class_="imgdrg_lst").get("src")
-#   save_text_to_excel(url, excel_name_file, url, row, 2)
-
-#   nhom_thuoc = find_soup.find('a', class_="textdetaillink").get("title")
-#   save_text_to_excel(url, excel_name_file, nhom_thuoc, row, 3)
-
-#   dang_bao_che = find_soup.find(string=re.compile("Dạng bào chế")).find_next('span').get_text(strip=True)
-#   save_text_to_excel(url, excel_name_file, dang_bao_che, row, 4)
-
-#   dong_goi = find_soup.find(string=re.compile("Đóng gói")).find_next('span').get_text(strip=True)
-#   save_text_to_excel(url, excel_name_file, dang_bao_che, row, 5)
-
-#   thanh_phan = find_soup.find(string=re.compile("Thành phần")).find_next('span').get_text(strip=True)
-#   save_text_to_excel(url, excel_name_file, dang_bao_che, row, 6)
-
-#   sdk = find_soup.find(string=re.compile("SĐK")).find_next('span').get_text(strip=True)
-#   save_text_to_excel(url, excel_name_file, dang_bao_che, row, 7)
-
-#   nha_san_xuat = find_soup.find(string=re.compile("Nhà sản xuất")).find_next('span').get_text(strip=True)
-#   save_text_to_excel(url, excel_name_file, nha_san_xuat, row, 8)
-
-#   nha_dang_ky = find_soup.find(string=re.compile("Nhà đăng ký")).find_next('span').get_text(strip=True)
-#   save_text_to_excel(url, excel_name_file, nha_dang_ky, row, 9)
-
-#   nha_phan_phoi = find_soup.find(string=re.compile("Nhà phân phối")).parent.parent.find_next('td').get_text(strip=True)
-#   save_text_to_excel(url, excel_name_file, nha_phan_phoi, row, 10)
-
-#   chi_dinh = find_soup.find(string=re.compile("Chỉ định")).find_next("div").get_text(strip=True).replace("-", "\n")
-#   save_text_to_excel(url, excel_name_file, chi_dinh, row, 11)
-
-#   lieuluong_cachdung = find_soup.find(string=re.compile("Liều lượng - Cách dùng")).find_next("div").get_text(strip=True)
-#   save_text_to_excel(url, excel_name_file, lieuluong_cachdung, row, 12)
-
-#   # chong_chi_dinh = find_soup.find(string=re.compile("Chống chỉ định").find_next("div").get_text(strip=True)
-#   # save_text_to_excel(url, excel_name_file, chong_chi_dinh, row, 13)
-
-#   tac_dung_phu = find_soup.find(string=re.compile("Tác dụng phụ")).find_next("div").get_text(strip=True)
-#   save_text_to_excel(url, excel_name_file, tac_dung_phu, row, 14)
-
-#   chu_y_de_phong = find_soup.find(string=re.compile("Chú ý đề phòng")).find_next("div").get_text(strip=True)
-#   save_text_to_excel(url, excel_name_file, chu_y_de_phong, row, 15)
-
-#   bao_quan = find_soup.find(string=re.compile("Chú ý đề phòng")).find_next("div").get_text(strip=True)
-#   save_text_to_excel(url, excel_name_file, bao_quan, row, 17)
-
-#   ######### Thông tin thành phần
-#   duoc_luc = find_soup.find("h3", string=re.compile("Dược lực")).find_next("div").get_text(strip=True)
-#   save_text_to_excel(url, excel_name_file, duoc_luc, row, 18)
-
-#   duoc_dong_hoc = find_soup.find("h3", string=re.compile("Dược động học"))
-#   if not duoc_dong_hoc:
-#     duoc_dong_hoc = ""
-#   else:
-#     duoc_dong_hoc.find_next("div").get_text(strip=True)
-#   save_text_to_excel(url, excel_name_file, duoc_dong_hoc, row, 19)
-
-#   tac_dung = find_soup.find("h3", string=re.compile("Tác dụng ")).find_next("div").get_text(strip=True)
-
-#   chi_dinhs = find_soup.find_all(string=re.compile("Chỉ định"))
-#   chi_dinh = ""
-#   for content in chi_dinhs:
-#     if not content:
-#       content = ""
-#     else:
-#       chi_dinh = chi_dinh.strip() + "\n" + content.find_next("div").get_text(strip=True).strip()
-
-#   # chống chỉ định
-#   chong_chi_dinhs = find_soup.find_all(string=re.compile("Chống chỉ định"[1:].lower()))
-
-#   chong_chi_dinh = ""
-#   for content in chong_chi_dinhs:
-#     if not content:
-#       content = ""
-#     else:
-#       chong_chi_dinh = chong_chi_dinh.strip() + "\n" + content.find_next("div").get_text(strip=True).strip()
-
-#   # Liều lượng - cách dùng
-#   lieuluong_cachdungs = find_soup.find_all(string=re.compile("Liều lượng - cách dùng"[1:].lower()))
-
-#   lieuluong_cachdung = ""
-#   for content in lieuluong_cachdungs:
-#     if not content:
-#       content = ""
-#     else:
-#       lieuluong_cachdung = (lieuluong_cachdung.strip() + "\n" + content.find_next("div").get_text(strip=True)).strip()
-
-#   # Tác dụng phụ
-#   tac_dung_phus = find_soup.find_all(string=re.compile("Tác dụng phụ"[1:].lower()))
-
-#   tac_dung_phu = ""
-#   for content in tac_dung_phus:
-#     if not content:
-#       content = ""
-#     else:
-#       tac_dung_phu = (tac_dung_phu.strip() + "\n" + content.find_next("div").get_text(strip=True)).strip()
-
-
-
-
-
-
-
-
+print("We spent {} to done this", end)
