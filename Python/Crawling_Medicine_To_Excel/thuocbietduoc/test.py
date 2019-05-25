@@ -123,8 +123,8 @@ class ThuocBietDuoc:
 
     # excel = ThuocBietDuoc.create_excel_file(sheet_name, excel_name_file)
 
-    print("================= line", line)
-    print("============== detail_url", detail_url)
+    print("================= line {}:\t {}".format(line, detail_url))
+
     # while i < len(data):
     with requests.Session() as s:
       res = s.get(detail_url, timeout=5, stream=True)
@@ -450,12 +450,6 @@ medicine_group_urls = ThuocBietDuoc.get_medicine_drug_groups(url, default_url)
 # print("We spent {} to done this", end)
 
 
-
-
-
-
-
-
 i = 0
 total = []
 urls_medicine_groups = []
@@ -475,11 +469,12 @@ while i < len(medicine_group_urls[0]):
   for col, header in enumerate(headers):
     sheet.row(0).write(col, header, style)
 
+  n = 1
   with requests.Session() as s:
     s.headers={
                 "User-Agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.131 Safari/537.36"
               }
-    n = 1
+
     res = s.get(medicine_group_urls[0][i], headers=s.headers, timeout=20, stream=True)
     soup = BeautifulSoup(res.text,"lxml")
 
@@ -514,11 +509,12 @@ while i < len(medicine_group_urls[0]):
           ################################################### Save record to Excel #########################################
           ThuocBietDuoc.save_detail_drug_to_excel(sheet, line, url_href)
           line = line + 1
-      print(len(urls_medicine_groups))
       n = n + 1
-  book.save(excel_name_file)
+    book.save(excel_name_file)
+  print("pass here")
 
-  if i is (i + 1):
+  if n:
+    n = 1
     urls_medicine_groups.pop()
     print(len(urls_medicine_groups))
     print("We are going here xD")
@@ -583,6 +579,5 @@ while i < len(medicine_group_urls[0]):
               line = line + 1
           n = n + 1
       wb.save(excel_name_file)
-    print("============ amount url", len(urls_medicine_groups))
-
+      print("============ amount url", len(urls_medicine_groups))
   i = i + 1
