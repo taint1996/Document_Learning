@@ -368,4 +368,4 @@ book.save("report.xls")
 
 end = (datetime.now() - dt_now)
 
-print("We spent {} to done this", end)
+print("We spent {} to done this".format(end))
