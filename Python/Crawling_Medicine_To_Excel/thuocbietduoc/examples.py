@@ -84,8 +84,7 @@ class ThuocBietDuoc:
   def save_detail_drug_to_excel(sheet, line, detail_url):
     default_url = "https://www.thuocbietduoc.com.vn"
 
-    print("================= line", line)
-    print("============== detail_url", detail_url)
+    print("============== detail_url {}\t{}".format(line, detail_url))
     # while i < len(data):
     with requests.Session() as s:
       res = s.get(detail_url, timeout=5, stream=True)
@@ -279,8 +278,8 @@ url = "https://www.thuocbietduoc.com.vn/thuoc/drgsearch.aspx"
 print(">>>>>>>>>>>>>>>>>> Here We Go ")
 from datetime import datetime
 
-# dt_now = datetime.now()
-# print("Start at: {}", dt_now)
+dt_now = datetime.now()
+print("Start at: {}".format(dt_now))
 
 # ######################################## List URL Nhóm thuốc ########################################
 medicine_group_urls = ThuocBietDuoc.get_medicine_drug_groups(url, default_url)
@@ -502,41 +501,45 @@ style = xlwt.easyxf('align: vert centre, horiz centre; font: bold on')
 for col, header in enumerate(headers):
   sheet.row(0).write(col, header, style)
 
-with requests.Session() as s:
-  s.headers={
-              "User-Agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.131 Safari/537.36"
-            }
+# with requests.Session() as s:
+#   s.headers={
+#               "User-Agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.131 Safari/537.36"
+#             }
+headers = requests.utils.default_headers()
+headers['User-Agent'] = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36'
 
-  res = s.get(medicine_group_urls[0][0], headers=s.headers, timeout=20, stream=True)
-  soup = BeautifulSoup(res.text,"lxml")
-  n = line = 1
-  while True:
-    payload = {item['name']:item.get('value','') for item in soup.select("input[name]")}
-    payload['__VIEWSTATEGENERATOR'] = '336E2262'
-    payload['Drugnews1$Gr1'] = 'Rdrgnm'
-    payload['page'] = n
-    payload['currentView'] = '1'
-    req = s.post(medicine_group_urls[0][0], data=payload,headers=s.headers)
-    soup_obj = BeautifulSoup(req.text,"html.parser")
+res = requests.get(medicine_group_urls[0][0], headers=headers, timeout=5, stream=True)
+soup = BeautifulSoup(res.text,"lxml")
+n = line = 1
+while True:
+  payload = {item['name']:item.get('value','') for item in soup.select("input[name]")}
+  payload['__VIEWSTATEGENERATOR'] = '336E2262'
+  payload['Drugnews1$Gr1'] = 'Rdrgnm'
+  payload['page'] = n
+  payload['currentView'] = '1'
+  req = requests.post(medicine_group_urls[0][0], data=payload,headers=headers)
+  soup_obj = BeautifulSoup(req.text,"html.parser")
 
-    find_soup = soup_obj.find("table", attrs={"class": "text2", "id": "Tabl1"})
+  find_soup = soup_obj.find("table", attrs={"class": "text2", "id": "Tabl1"})
 
-    find_a_href = find_soup.find_all("a", class_="textlink01_v")
-    if len(find_a_href) == 0:
-      break
+  find_a_href = find_soup.find_all("a", class_="textlink01_v")
+  if len(find_a_href) == 0:
+    break
 
-    for url in find_a_href:
-      url_href = "{}{}".format(default_url, url.get("href")[2:])
-      name_drug = url_href[:-5].split("/")[-1] # Get name drug
+  if find_a_href is None:
+    continue
 
-      # check unique url href #TODO: check later
-      ############### name drug use to uniq drug
-      if url_href not in urls_medicine_groups:# and name_drug not in urls_medicine_groups:
-        urls_medicine_groups.append(url_href)
-        ################################################### Save record to Excel #########################################
-        ThuocBietDuoc.save_detail_drug_to_excel(sheet, line, url_href)
-        line = line + 1
-    n = n + 1
+  for url in find_a_href:
+    url_href = "{}{}".format(default_url, url.get("href")[2:])
+    name_drug_aspx = url_href.split("/")[-1] # Get name drug
+    # check unique url href #TODO: check later
+    ############### name drug use to uniq drug
+    if url_href not in urls_medicine_groups: #and name_drug_aspx not in url_href:
+      urls_medicine_groups.append(url_href)
+      ################################################### Save record to Excel #########################################
+      ThuocBietDuoc.save_detail_drug_to_excel(sheet, line, url_href)
+      line = line + 1
+  n = n + 1
 
 book.save(excel_name_file)
 
@@ -549,19 +552,13 @@ while i <= (len(medicine_group_urls[0])):
   wb = xl_copy(rb)
   sheet_names = rb.sheet_names()
 
-  headers = ("url", "nhom_thuoc", "ten_thuoc", "img", "dang_bao_che", "dong_goi", "thanh_phan", "sdk", "nha_san_xuat", "nha_dang_ky", "nha_phan_phoi", "chi_dinh", "lieuluong_cachdung", "chong_chi_dinh", "chu_y_de_phong", "duoc_luc", "duoc_dong_hoc", "tac_dung", "tac_dung_phu")
-
-  style = xlwt.easyxf('align: vert centre, horiz centre; font: bold on')
-  for col, header in enumerate(headers):
-    sheet.row(0).write(col, header, style)
-
-  line = 1
-
-  print("whats'up")
   sheet_drug_group_name = medicine_group_urls[0][i].split("/")[-2] # Tên nhóm thuốc
-  print(sheet_drug_group_name)
-  print(sheet_names)
   if sheet_drug_group_name not in sheet_names:
+    line = 1
+
+    print("whats'up")
+    print(sheet_drug_group_name)
+    print(sheet_names)
     add_sheet = wb.add_sheet(sheet_drug_group_name)
 
     headers = ("url", "nhom_thuoc", "ten_thuoc", "img", "dang_bao_che", "dong_goi", "thanh_phan", "sdk", "nha_san_xuat", "nha_dang_ky", "nha_phan_phoi", "chi_dinh", "lieuluong_cachdung", "chong_chi_dinh", "chu_y_de_phong", "duoc_luc", "duoc_dong_hoc", "tac_dung", "tac_dung_phu")
@@ -572,95 +569,50 @@ while i <= (len(medicine_group_urls[0])):
 
     n = 1
 
-    with requests.Session() as s:
-      s.headers={
-                  "User-Agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.131 Safari/537.36"
-                }
+    # with requests.Session() as s:
+    #   s.headers={
+    #               "User-Agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.131 Safari/537.36"
+    #             }
 
-      res = s.get(medicine_group_urls[0][i], headers=s.headers, timeout=20, stream=True)
-      soup = BeautifulSoup(res.text,"lxml")
+    headers = requests.utils.default_headers()
+    headers['User-Agent'] = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36'
+    res = requests.get(medicine_group_urls[0][i], headers=headers, timeout=5, stream=True)
+    soup = BeautifulSoup(res.text,"lxml")
 
-      while True:
-        payload = {item['name']:item.get('value','') for item in soup.select("input[name]")}
-        payload['__VIEWSTATEGENERATOR'] = '336E2262'
-        payload['Drugnews1$Gr1'] = 'Rdrgnm'
-        payload['page'] = n
-        payload['currentView'] = '1'
-        req = s.post(medicine_group_urls[0][i], data=payload,headers=s.headers)
-        soup_obj = BeautifulSoup(req.text,"html.parser")
+    while True:
+      payload = {item['name']:item.get('value','') for item in soup.select("input[name]")}
+      payload['__VIEWSTATEGENERATOR'] = '336E2262'
+      payload['Drugnews1$Gr1'] = 'Rdrgnm'
+      payload['page'] = n
+      payload['currentView'] = '1'
+      req = requests.post(medicine_group_urls[0][i], data=payload, headers=headers)
+      soup_obj = BeautifulSoup(req.text,"html.parser")
 
-        find_soup = soup_obj.find("table", attrs={"class": "text2", "id": "Tabl1"})
+      find_soup = soup_obj.find("table", attrs={"class": "text2", "id": "Tabl1"})
 
-        find_a_href = find_soup.find_all("a", class_="textlink01_v")
-        if len(find_a_href) == 0:
-          break
+      find_a_href = find_soup.find_all("a", class_="textlink01_v")
 
-        for url in find_a_href:
-          url_href = "{}{}".format(default_url, url.get("href")[2:])
-          name_drug = url_href[:-5].split("/")[-1] # Get name drug
+      if len(find_a_href) == 0:
+        break
 
-          # check unique url href #TODO: check later
-          ############### name drug use to uniq drug
-          if url_href not in urls_medicine_groups:# and name_drug not in urls_medicine_groups:
-            urls_medicine_groups.append(url_href)
-            ################################################### Save record to Excel #########################################
-            ThuocBietDuoc.save_detail_drug_to_excel(add_sheet, line, url_href)
-            line = line + 1
-        n = n + 1
-        print("Go next !")
-    wb.save(excel_name_file)
+      if find_a_href is None:
+        continue
+
+      for url in find_a_href:
+        url_href = "{}{}".format(default_url, url.get("href")[2:])
+        name_drug_aspx = url_href.split("/")[-1] # Get name drug
+        # check unique url href #TODO: check later
+        ############### name drug use to uniq drug
+        if url_href not in urls_medicine_groups: #and name_drug_aspx not in url_href:
+          urls_medicine_groups.append(url_href)
+          ################################################### Save record to Excel #########################################
+          ThuocBietDuoc.save_detail_drug_to_excel(add_sheet, line, url_href)
+          line = line + 1
+      n = n + 1
+      print("Go next !")
+  wb.save(excel_name_file)
   i = i + 1
 
-# rb = open_workbook(excel_name_file, formatting_info=True)
+end = (datetime.now() - dt_now)
 
-# wb = xl_copy(rb)
-# sheet_names = rb.sheet_names()
-# sheet_drug_group_name_1 = medicine_group_urls[0][-1].split("/")[-2] # Tên nhóm thuốc
-
-# add_sheet = wb.add_sheet(sheet_drug_group_name_1)
-
-# headers = ("url", "nhom_thuoc", "ten_thuoc", "img", "dang_bao_che", "dong_goi", "thanh_phan", "sdk", "nha_san_xuat", "nha_dang_ky", "nha_phan_phoi", "chi_dinh", "lieuluong_cachdung", "chong_chi_dinh", "chu_y_de_phong", "duoc_luc", "duoc_dong_hoc", "tac_dung", "tac_dung_phu")
-
-# style = xlwt.easyxf('align: vert centre, horiz centre; font: bold on')
-# for col, header in enumerate(headers):
-#   add_sheet.row(0).write(col, header, style)
-
-# line = 1
-# with requests.Session() as s:
-#   s.headers={
-#               "User-Agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.131 Safari/537.36"
-#             }
-#   n = 1
-#   res = s.get(medicine_group_urls[0][-1], headers=s.headers, timeout=20, stream=True)
-#   soup = BeautifulSoup(res.text,"lxml")
-
-#   while True:
-#     payload = {item['name']:item.get('value','') for item in soup.select("input[name]")}
-#     payload['__VIEWSTATEGENERATOR'] = '336E2262'
-#     payload['Drugnews1$Gr1'] = 'Rdrgnm'
-#     payload['page'] = n
-#     payload['currentView'] = '1'
-#     req = s.post(medicine_group_urls[0][-1], data=payload,headers=s.headers)
-#     soup_obj = BeautifulSoup(req.text,"html.parser")
-
-#     find_soup = soup_obj.find("table", attrs={"class": "text2", "id": "Tabl1"})
-
-#     find_a_href = find_soup.find_all("a", class_="textlink01_v")
-#     if len(find_a_href) == 0:
-#       break
-#     if find_a_href is None:
-#       continue
-#     for url in find_a_href:
-#       url_href = "{}{}".format(default_url, url.get("href")[2:])
-#       name_drug = url_href[:-5].split("/")[-1] # Get name drug
-
-#       # check unique url href #TODO: check later
-#       ############### name drug use to uniq drug
-#       if url_href not in urls_medicine_groups:# and name_drug not in urls_medicine_groups:
-#         urls_medicine_groups.append(url_href)
-#         ################################################### Save record to Excel #########################################
-#         ThuocBietDuoc.save_detail_drug_to_excel(add_sheet, line, url_href)
-#         line = line + 1
-#     n = n + 1
-# wb.save(excel_name_file)
-
+print("We spent {} to done this".format(end))
