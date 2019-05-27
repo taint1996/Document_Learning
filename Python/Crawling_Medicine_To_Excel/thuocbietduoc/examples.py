@@ -534,7 +534,7 @@ while True:
     name_drug_aspx = url_href.split("/")[-1] # Get name drug
     # check unique url href #TODO: check later
     ############### name drug use to uniq drug
-    if url_href not in urls_medicine_groups: #and name_drug_aspx not in url_href:
+    if url_href not in urls_medicine_groups and name_drug_aspx not in url_href:
       urls_medicine_groups.append(url_href)
       ################################################### Save record to Excel #########################################
       ThuocBietDuoc.save_detail_drug_to_excel(sheet, line, url_href)
@@ -603,7 +603,7 @@ while i <= (len(medicine_group_urls[0])):
         name_drug_aspx = url_href.split("/")[-1] # Get name drug
         # check unique url href #TODO: check later
         ############### name drug use to uniq drug
-        if url_href not in urls_medicine_groups: #and name_drug_aspx not in url_href:
+        if url_href not in urls_medicine_groups and name_drug_aspx not in url_href:
           urls_medicine_groups.append(url_href)
           ################################################### Save record to Excel #########################################
           ThuocBietDuoc.save_detail_drug_to_excel(add_sheet, line, url_href)
