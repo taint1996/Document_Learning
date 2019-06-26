@@ -245,14 +245,6 @@ for item in li_tags:
       NhaThuocAnKhang.write_row_to_excel(sheet, nhom_thuoc, line, 5)
 
       slidedetail = detail_soup.find("aside", class_="slidedetail")
-      # owl-wrapper-outer
-      # div_sync2 = slidedetail.find("div", id="sync2")
-      # images = div_sync2.findNext("div", class_="owl-item synced")
-
-      # image = images.find("img", class_="lazyOwl")
-      # NhaThuocAnKhang.write_row_to_excel(sheet, image, line, 3)
-      # NhaThuocAnKhang.write_row_to_excel(sheet, hinh_anh1, line, 3)
-      # NhaThuocAnKhang.write_row_to_excel(sheet, hinh_anh2, line, 4)
 
       nha_san_xuat = all_span_short_descs[-2].get_text(strip=True).replace("Nhà sản xuất:", "")
       NhaThuocAnKhang.write_row_to_excel(sheet, nha_san_xuat, line, 7)
@@ -294,7 +286,7 @@ for item in li_tags:
 
       luu_y_khi_su_dung = soup_info.find("strong", string="Lưu ý khi sử dụng")
       luu_y_khi_su_dung = NhaThuocAnKhang.check_presence_find_next_tag_by_find(luu_y_khi_su_dung, "div", "content")
-      NhaThuocAnKhang.write_row_to_excel(sheet, chong_chi_dinh, line, 14)
+      NhaThuocAnKhang.write_row_to_excel(sheet, luu_y_khi_su_dung, line, 14)
 
       # Tác dụng không mong muốn
       tac_dung_phu = soup_info.find("span", string="(Tác dụng phụ)")
