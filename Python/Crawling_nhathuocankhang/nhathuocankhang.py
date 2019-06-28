@@ -103,8 +103,15 @@ class NhaThuocAnKhang:
           san_xuat_tai = all_span_short_descs[-1].get_text(strip=True).replace("Sản xuất tại", "")
           NhaThuocAnKhang.write_row_to_excel(sheet, san_xuat_tai, line, 9)
 
-          gia_ca = info_sell.find("div", class_="price").strong.get_text(strip=True) + "" + info_sell.find("span", class_="unit").get_text(strip=True)
+          find_price = info_sell.find("div", class_="price").strong.get_text(strip=True)
+          format_price = find_price.split("₫")
+          gia_ca = int(format_price[0].replace('.', ''))
           NhaThuocAnKhang.write_row_to_excel(sheet, gia_ca, line, 3)
+          print(gia_ca)
+
+          don_vi = info_sell.find("span", class_="unit").get_text(strip=True) # /Viên
+          NhaThuocAnKhang.write_row_to_excel(sheet, don_vi, line, 4)
+
 
           # status item
           tinh_trang_sp = info_sell.find("span", class_="status")
@@ -197,7 +204,7 @@ class ExcelCrawlData:
   def create_headers_to_excel(sheet_name, excel_name_file):
     book = xlwt.Workbook(encoding="utf-8", style_compression=0)
 
-    headers = ("id", "url", "ten_thuoc", "gia_ca", "img1", "img2", "nhom_thuoc", "qui_cach_dong_goi", "nha_san_xuat", "san_xuat_tai", "tinh_trang_sp", "thanh_phan", "cong_dung", "lieu_dung", "chong_chi_dinh", "luu_y_khi_su_dung", "tac_dung_phu", "tuong_tac_voi_thuoc_khac", "bao_quan", "lai_xe", "dong_goi", "thai_ky", "han_su_dung", "duoc_luc_hoc", "duoc_dong_hoc", "dac_diem")
+    headers = ("id", "url", "ten_thuoc", "gia_ca", "don_vi", "img", "nhom_thuoc", "qui_cach_dong_goi", "nha_san_xuat", "san_xuat_tai", "tinh_trang_sp", "thanh_phan", "cong_dung", "lieu_dung", "chong_chi_dinh", "luu_y_khi_su_dung", "tac_dung_phu", "tuong_tac_voi_thuoc_khac", "bao_quan", "lai_xe", "dong_goi", "thai_ky", "han_su_dung", "duoc_luc_hoc", "duoc_dong_hoc", "dac_diem")
     bsheet = book.add_sheet(sheet_name, cell_overwrite_ok=True)
     style = xlwt.easyxf('align: vert centre, horiz centre; font: bold on')
 
