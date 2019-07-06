@@ -61,7 +61,7 @@ class Pharmacity:
 
     ws = wb.add_sheet(sheet_name, cell_overwrite_ok=True)
 
-    headers = ("url", "ten_thuoc", "gia_ca", "img", "nhom_thuoc", "qui_cach_dong_goi", "nha_san_xuat", "san_xuat_tai", "tinh_trang_sp", "thanh_phan", "cong_dung", "lieu_dung", "chong_chi_dinh", "luu_y_khi_su_dung", "tac_dung_phu", "tuong_tac_voi_thuoc_khac", "bao_quan", "lai_xe", "dong_goi", "thai_ky", "han_su_dung", "duoc_luc_hoc", "duoc_dong_hoc", "dac_diem")
+    headers = ("id", "url", "ten_thuoc", "gia_ca", "img", "nhom_thuoc", "qui_cach_dong_goi", "nha_san_xuat", "san_xuat_tai", "thanh_phan", "cong_dung", "lieu_dung", "chong_chi_dinh", "luu_y_khi_su_dung", "tac_dung_phu", "tuong_tac_voi_thuoc_khac", "bao_quan", "lai_xe", "dong_goi", "thai_ky", "han_su_dung", "duoc_luc_hoc", "duoc_dong_hoc", "dac_diem")
 
     style = xlwt.easyxf('align: vert centre, horiz centre; font: bold on')
     for col, header_name in enumerate(headers):
@@ -76,7 +76,7 @@ print("Start at: {}".format(dt_now))
 ### create Excel xls file
 book = xlwt.Workbook(encoding="utf-8", style_compression=0)
 
-headers = ("url", "ten_thuoc", "gia_ca", "img", "nhom_thuoc", "qui_cach_dong_goi", "nha_san_xuat", "san_xuat_tai", "tinh_trang_sp", "thanh_phan", "cong_dung", "lieu_dung", "chong_chi_dinh", "luu_y_khi_su_dung", "tac_dung_phu", "tuong_tac_voi_thuoc_khac", "bao_quan", "lai_xe", "dong_goi", "thai_ky", "han_su_dung", "duoc_luc_hoc", "duoc_dong_hoc", "dac_diem")
+headers = ("id", "url", "ten_thuoc", "gia_ca", "img", "nhom_thuoc", "qui_cach_dong_goi", "nha_san_xuat", "san_xuat_tai", "thanh_phan", "cong_dung", "lieu_dung", "chong_chi_dinh", "luu_y_khi_su_dung", "tac_dung_phu", "tuong_tac_voi_thuoc_khac", "bao_quan", "lai_xe", "dong_goi", "thai_ky", "han_su_dung", "duoc_luc_hoc", "duoc_dong_hoc", "dac_diem")
 bsheet = book.add_sheet("nha-thuoc-ankhang", cell_overwrite_ok=True)
 style = xlwt.easyxf('align: vert centre, horiz centre; font: bold on')
 
@@ -120,10 +120,10 @@ for item in cate_items:
     url_products = products.find_all("div", class_="box-text-products")
     print("page: ", page)
     for url in url_products:
-      Pharmacity.write_row_to_excel(sheet, name_drug_group, line, 4)
-      
+      Pharmacity.write_row_to_excel(sheet, name_drug_group, line, 5)
+
       url_prod = url.a.get("href")
-      Pharmacity.write_row_to_excel(sheet, url_prod, line, 0)
+      Pharmacity.write_row_to_excel(sheet, url_prod, line, 1)
       print(url_prod)
       print("line:", line)
       ### get detail prod
@@ -135,40 +135,26 @@ for item in cate_items:
 
       prod_gallery = info_main_prod.find("div", class_="product-gallery")
 
-      images = prod_gallery.findAll("img", class_="attachment-woocommerce_thumbnail")
+      # images = prod_gallery.findAll("img", class_="attachment-woocommerce_thumbnail")
 
-      imgArr = []
-      for img in images:
-        url_img = img.get("src")
-        imgArr.append(url_img)
+      # imgArr = []
+      # for img in images:
+      #   url_img = img.get("src")
+      #   imgArr.append(url_img)
 
-      Pharmacity.write_row_to_excel(sheet, imgArr, line, 3)
+        # "id", "url", "ten_thuoc", "gia_ca", "img", "nhom_thuoc", "qui_cach_dong_goi", "nha_san_xuat", "san_xuat_tai", "tinh_trang_sp", "thanh_phan", "cong_dung", "lieu_dung", "chong_chi_dinh", "luu_y_khi_su_dung", "tac_dung_phu", "tuong_tac_voi_thuoc_khac", "bao_quan", "lai_xe", "dong_goi", "thai_ky", "han_su_dung", "duoc_luc_hoc", "duoc_dong_hoc", "dac_diem"
+
+      Pharmacity.write_row_to_excel(sheet, imgArr, line, 4)
 
       prod_info = info_main_prod.find("div", class_="product-info")
       prod_name = prod_info.h1.get_text(strip=True)
-      Pharmacity.write_row_to_excel(sheet, prod_name, line, 1)
+      Pharmacity.write_row_to_excel(sheet, prod_name, line, 2)
 
       prod_price = prod_info.find("p", class_="product-page-price")
       span_prod_prices = prod_price.findAll("span")
 
       price = span_prod_prices[0].get_text(strip=True) + span_prod_prices[-1].get_text(strip=True) # Ex: 39,000VND/Chai
-      Pharmacity.write_row_to_excel(sheet, price, line, 2)
-
-      in_stock = prod_info.find("p", class_="stock").get_text(strip=True)
-      Pharmacity.write_row_to_excel(sheet, in_stock, line, 8)
-      # in-stock")
-      # if in_stock is not None:
-      #   in_stock = in_stock.getText(strip=True) # Còn hàng / hết hàng
-      # else:
-      #   in_stock = None
-
-      # out_of_stock = prod_info.find("p", class_="stock out-of-stock")
-      # if out_of_stock is not None:
-      #   out_of_stock = out_of_stock.getText(strip=True) # Còn hàng / hết hàng
-      # else:
-      #   out_of_stock = None
-
-
+      Pharmacity.write_row_to_excel(sheet, price, line, 3)
 
       ### Detail prod is description product
       # desc_prod = detail_soup.find("div", id="tab-description")
