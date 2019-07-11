@@ -13,6 +13,15 @@ import time
 import sys
 from datetime import datetime
 
+# class NhaThuocLongChau:
+#   def __init__(url):
+#     self.url = url
+
+#   def requests_get_url(url):
+#     req_get = requests.get(url, timeout=20, stream=True)
+#     html_soup = BeautifulSoup(req_get.text, "html.parser")
+#     return html_soup
+
 # url = "https://nhathuoclongchau.com"
 # req_url = requests.get(url, timeout=20, stream=True)
 # soup = BeautifulSoup(req_url.text, "html.parser")
@@ -68,7 +77,7 @@ from datetime import datetime
 #       number_page = "?page={}".format(page)
 #       druggroup_per_page = druggroup + number_page
 
-#       druggroup_soup = NhaThuocLongChau.request_get(druggroup_per_page)
+#       druggroup_soup = NhaThuocLongChau.requests_get_url(druggroup_per_page)
 
 #       print("================= drug group perpage", druggroup_per_page)
 
@@ -103,10 +112,12 @@ from datetime import datetime
 #         detail_soup = BeautifulSoup(detail_req.text, "html.parser")
 
 #         slide_img = detail_soup.find("div", "product-info-in product-slide").find(
-#             "div", "gallery-top swiper-container swiper-container-horizontal")
-#         img = slide_img.find("div", "swiper-slide").img
-#         if img is not None:
-#           product_img_600x600 = img.get("src")
+#             "div", "gallery-top swiper-container")
+#         print("slide image", slide_img)
+#         image = slide_img.find("div", "swiper-slide")
+#         print("IMG:", image.img.get("src"))
+#         if image is not None:
+#           product_img_600x600 = image.img.get("src")
 #         else:
 #           product_img_600x600 = None
 #         line = line + 1
@@ -114,11 +125,11 @@ from datetime import datetime
 
 
 class NhaThuocLongChau:
-  def __init__(url):
+  def __init__(self, url):
     self.url = url
 
-  def requests_get_url(url):
-    req_get = requests.get(url, timeout=20, stream=True)
+  def requests_get_url(self):
+    req_get = requests.get(self, timeout=20, stream=True)
     html_soup = BeautifulSoup(req_get.text, "html.parser")
 
     return html_soup
@@ -150,7 +161,7 @@ class NhaThuocLongChau:
 
     print("line: ", line)
     print("------> id: {}, name: {}, price: {}".format(product_id,
-                                                        product_name, product_price))
+                                                       product_name, product_price))
 
     ############ Go to Detail of Drug ###############
     product_detail_url = prod.find("a").get("href")
@@ -159,11 +170,12 @@ class NhaThuocLongChau:
     detail_soup = BeautifulSoup(detail_req.text, "html.parser")
 
     slide_img = detail_soup.find("div", "product-info-in product-slide").find(
-        "div", "gallery-top swiper-container swiper-container-horizontal")
-    img = slide_img.find("div", "swiper-slide").img
+        "div", "gallery-top swiper-container")
+    image = slide_img.find("div", "swiper-slide")
 
-    if img is not None:
-      product_img_600x600 = img.get("src")
+    print("IMG:", image.img.get("src"))
+    if image is not None:
+      product_img_600x600 = image.img.get("src")
     else:
       product_img_600x600 = None
     line = line + 1

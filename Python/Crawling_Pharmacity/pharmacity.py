@@ -19,33 +19,6 @@ class Pharmacity:
     self.post_url = post_url
     self.name = name
 
-  def save_to_excel(self, sheet_name, data, row, column):
-    rb = open_workbook(sheet_name, formatting_info=True)
-
-    if rb is not None:
-      r_sheet = rb.sheet_by_index(0)
-      wb = copy(rb)
-      sheet = wb.get_sheet(0)
-
-      i = 0
-      while i < len(data):
-        writing = sheet.write(row, column, data[i])
-        wb.save(sheet_name)
-        i = i + 1
-        row = row + 1
-
-  def save_home_to_excel(self, sheet_name, data, row, column):
-    rb = open_workbook(sheet_name, formatting_info=True)
-
-    if rb is not None:
-      r_sheet = rb.sheet_by_index(0)
-      wb = copy(rb)
-      sheet = wb.get_sheet(0)
-
-      writing = sheet.write(row, column, data)
-
-      wb.save(sheet_name)
-
   def write_row_to_excel(sheet, text_data, row, column):
     sheet.write(row, column, text_data)
 
@@ -77,7 +50,7 @@ print("Start at: {}".format(dt_now))
 book = xlwt.Workbook(encoding="utf-8", style_compression=0)
 
 headers = ("id", "url", "ten_thuoc", "gia_ca", "img", "nhom_thuoc", "qui_cach_dong_goi", "nha_san_xuat", "san_xuat_tai", "thanh_phan", "cong_dung", "lieu_dung", "chong_chi_dinh", "luu_y_khi_su_dung", "tac_dung_phu", "tuong_tac_voi_thuoc_khac", "bao_quan", "lai_xe", "dong_goi", "thai_ky", "han_su_dung", "duoc_luc_hoc", "duoc_dong_hoc", "dac_diem")
-bsheet = book.add_sheet("nha-thuoc-ankhang", cell_overwrite_ok=True)
+bsheet = book.add_sheet("nha-thuoc-pharmacity", cell_overwrite_ok=True)
 style = xlwt.easyxf('align: vert centre, horiz centre; font: bold on')
 
 for col, header_name in enumerate(headers):
@@ -85,87 +58,167 @@ for col, header_name in enumerate(headers):
 book.save("nhathuoc-pharmacity.xls")
 #########################################################
 
-url = "https://www.pharmacity.vn/danh-muc-san-pham/thuoc-khong-ke-don/"
+url1 = "https://www.pharmacity.vn/danh-muc-san-pham/thuoc-khong-ke-don/"
+url2 = "https://www.pharmacity.vn/danh-muc-san-pham/cham-soc-suc-khoe/"
 
-rp = requests.get(url, timeout=10, stream=True)
-soup = BeautifulSoup(rp.text, "html.parser")
+# pharmacity_urls = [url1, url2]
+pharmacity_urls = [url2]
+# open_wb = open_workbook("nhathuoc-pharmacity.xls", formatting_info=True)
+# wb_copy = xl_copy(open_wb)
+# sheet = wb_copy.get_sheet(0)
 
-prod_cate = soup.find("ul", "product-categories")
-prod_child = prod_cate.find("ul", "children")
+for url in pharmacity_urls:
+  req_url = requests.get(url, timeout=20, stream=True)
+  soup = BeautifulSoup(req_url.text, "html.parser")
+  prod_category = soup.find("ul", "product-categories")
+  line = 1
+  if url2 == url:
+    ul_children = prod_category.find(
+        "li", "cat-item cat-item-1594 current-cat cat-parent")
+    find_ul_children = ul_children.find("ul", class_="children")
+    cate_items = find_ul_children.findAll("li", "cat-item")
 
-cate_items = prod_child.find_all("li", "cat-item")
+    for cate in cate_items:
+      i = 1
+      if "cat-parent" in cate.get("class"):
+        pass
+      else:
+        url_cate_item = cate.a.get("href")
+        print(">>>>>>", url_cate_item)
+        name_drug_group = cate.a.get_text(strip=True)
+        print("url_cate_item", url_cate_item)
+        while True:
+          page = 'page/{}'.format(i)
+          req_url_cate = requests.get(url_cate_item + page, stream=True, timeout=20)
 
-line = 1
-for item in cate_items:
-  open_wb = open_workbook("nhathuoc-pharmacity.xls", formatting_info=True)
-  wb_copy = xl_copy(open_wb)
-  sheet = wb_copy.get_sheet(0)
+          if req_url_cate.status_code == 404:
+            break
 
-  i = 1
+          cate_soup = BeautifulSoup(req_url_cate.text, "html.parser")
+          products = cate_soup.find("div", class_="products row row-small large-columns-4 medium-columns-3 small-columns-2 equalize-box")
+          product_drugs = products.find_all("div", class_="product-small col has-hover")
 
-  url_cate_item = item.a.get("href")
-  print("url cate item", item.a.get_text(strip=True))
-  name_drug_group = item.a.get_text(strip=True)
+          for prod in product_drugs:
+            # Pharmacity.write_row_to_excel(sheet, name_drug_group, line, 5)
 
-  while True:
-    page = 'page/{}'.format(i)
-    req_url_cate = requests.get(url_cate_item + page, stream=True, timeout=10)
+            product_small = prod.find("div", class_="box-text box-text-products")
+            prod_title = product_small.find("p", class_="name product-title")
+            prod_name = prod_title.a.get_text(strip=True)
 
-    if req_url_cate.status_code == 404:
-      wb_copy.save("nhathuoc-pharmacity.xls")
-      break
+            # Pharmacity.write_row_to_excel(sheet, prod_name, line, 2)
+            prod_url = prod_title.a.get("href")
+            # Pharmacity.write_row_to_excel(sheet, prod_url, line, 1)
 
-    cate_soup = BeautifulSoup(req_url_cate.text, "html.parser")
-    products = cate_soup.find("div", class_="products row row-small large-columns-4 medium-columns-3 small-columns-2 equalize-box")
-    url_products = products.find_all("div", class_="box-text-products")
-    print("page: ", page)
-    for url in url_products:
-      Pharmacity.write_row_to_excel(sheet, name_drug_group, line, 5)
+            pharmacity_id = product_small.find(
+                "div", class_= re.compile("^add-to-cart-button")).a.get("data-product_id")
 
-      url_prod = url.a.get("href")
-      Pharmacity.write_row_to_excel(sheet, url_prod, line, 1)
-      print(url_prod)
-      print("line:", line)
-      ### get detail prod
-      req_detail_prod = requests.get(url_prod, timeout=10, stream=True)
-      detail_soup = BeautifulSoup(req_detail_prod.text, "html.parser")
+            print("url: {}\nid: {}".format(prod_url, pharmacity_id))
+            # Pharmacity.write_row_to_excel(sheet, pharmacity_id, line, 0)
 
-      # info_prod is content include image and name, price Product
-      info_main_prod = detail_soup.find("div", class_="product-main")
+            print("line:", line)
 
-      prod_gallery = info_main_prod.find("div", class_="product-gallery")
+            ### get detail prod
+            req_detail_prod = requests.get(prod_url, timeout=20, stream=True)
+            detail_soup = BeautifulSoup(req_detail_prod.text, "html.parser")
 
-      # images = prod_gallery.findAll("img", class_="attachment-woocommerce_thumbnail")
+            # info_prod is content include image and name, price Product
+            info_main_prod = detail_soup.find("div", class_="product-main")
 
-      # imgArr = []
-      # for img in images:
-      #   url_img = img.get("src")
-      #   imgArr.append(url_img)
+            prod_gallery = info_main_prod.find("div", class_="product-gallery")
 
-        # "id", "url", "ten_thuoc", "gia_ca", "img", "nhom_thuoc", "qui_cach_dong_goi", "nha_san_xuat", "san_xuat_tai", "tinh_trang_sp", "thanh_phan", "cong_dung", "lieu_dung", "chong_chi_dinh", "luu_y_khi_su_dung", "tac_dung_phu", "tuong_tac_voi_thuoc_khac", "bao_quan", "lai_xe", "dong_goi", "thai_ky", "han_su_dung", "duoc_luc_hoc", "duoc_dong_hoc", "dac_diem"
+            prod_image = prod_gallery.find("img", "wp-post-image skip-lazy lazy-loaded")
 
-      Pharmacity.write_row_to_excel(sheet, imgArr, line, 4)
+            if prod_image is not None:
+              prod_image_460x460 = prod_image.get("src")
+            else:
+              prod_image = None
 
-      prod_info = info_main_prod.find("div", class_="product-info")
-      prod_name = prod_info.h1.get_text(strip=True)
-      Pharmacity.write_row_to_excel(sheet, prod_name, line, 2)
+            # Pharmacity.write_row_to_excel(sheet, prod_image, line, 4)
 
-      prod_price = prod_info.find("p", class_="product-page-price")
-      span_prod_prices = prod_price.findAll("span")
+            prod_info = info_main_prod.find("div", class_="product-info")
 
-      price = span_prod_prices[0].get_text(strip=True) + span_prod_prices[-1].get_text(strip=True) # Ex: 39,000VND/Chai
-      Pharmacity.write_row_to_excel(sheet, price, line, 3)
+            prod_price = prod_info.find("p", class_="product-page-price")
+            span_prod_prices = prod_price.findAll("span")
 
-      ### Detail prod is description product
-      # desc_prod = detail_soup.find("div", id="tab-description")
-      # label_chong_chi_dinh = desc_prod.p.find("strong", text=re.compile("Chống chỉ định"))
-      # if label_chong_chi_dinh is not None:
-      #   label_chong_chi_dinh = label_chong_chi_dinh.next_element
-      #   chong_chi_dinh = label_chong_chi_dinh.next_element
-      # else:
-      #   chong_chi_dinh = None
-      line = line + 1
-    i = i + 1
+            price = span_prod_prices[0].get_text(strip=True) + span_prod_prices[-1].get_text(strip=True) # Ex: 39,000VND/Chai
+            # Pharmacity.write_row_to_excel(sheet, price, line, 3)
+
+            line = line + 1
+          i = i + 1
+  else:
+    prod_child = prod_category.find("ul", "children")
+
+    cate_items = prod_child.find_all("li", "cat-item")
+
+    # line = 1
+    for item in cate_items:
+      i = 1
+
+      url_cate_item = item.a.get("href")
+      print("url cate item", item.a.get_text(strip=True))
+      name_drug_group = item.a.get_text(strip=True)
+
+      while True:
+        page = 'page/{}'.format(i)
+        req_url_cate = requests.get(url_cate_item + page, stream=True, timeout=20)
+
+        if req_url_cate.status_code == 404:
+          # wb_copy.save("nhathuoc-pharmacity.xls")
+          break
+
+        cate_soup = BeautifulSoup(req_url_cate.text, "html.parser")
+        products = cate_soup.find("div", class_="products row row-small large-columns-4 medium-columns-3 small-columns-2 equalize-box")
+        product_drugs = products.find_all("div", class_="product-small col has-hover")
+        print("page: ", page)
+
+        for prod in product_drugs:
+          # Pharmacity.write_row_to_excel(sheet, name_drug_group, line, 5)
+
+          product_small = prod.find("div", class_="box-text box-text-products")
+          prod_title = product_small.find("p", class_="name product-title")
+          prod_name = prod_title.a.get_text(strip=True)
+
+          # Pharmacity.write_row_to_excel(sheet, prod_name, line, 2)
+          prod_url = prod_title.a.get("href")
+          # Pharmacity.write_row_to_excel(sheet, prod_url, line, 1)
+
+          pharmacity_id = product_small.find(
+              "div", class_= re.compile("^add-to-cart-button")).a.get("data-product_id")
+
+          print("url: {}\nid: {}".format(prod_url, pharmacity_id))
+          # Pharmacity.write_row_to_excel(sheet, pharmacity_id, line, 0)
+
+          print("line:", line)
+
+          ### get detail prod
+          req_detail_prod = requests.get(prod_url, timeout=20, stream=True)
+          detail_soup = BeautifulSoup(req_detail_prod.text, "html.parser")
+
+          # info_prod is content include image and name, price Product
+          info_main_prod = detail_soup.find("div", class_="product-main")
+
+          prod_gallery = info_main_prod.find("div", class_="product-gallery")
+
+          prod_image = prod_gallery.find("img", "wp-post-image skip-lazy lazy-loaded")
+
+          if prod_image is not None:
+            prod_image_460x460 = prod_image.get("src")
+          else:
+            prod_image = None
+
+          # Pharmacity.write_row_to_excel(sheet, prod_image, line, 4)
+
+          prod_info = info_main_prod.find("div", class_="product-info")
+
+          prod_price = prod_info.find("p", class_="product-page-price")
+          span_prod_prices = prod_price.findAll("span")
+
+          price = span_prod_prices[0].get_text(strip=True) + span_prod_prices[-1].get_text(strip=True) # Ex: 39,000VND/Chai
+          # Pharmacity.write_row_to_excel(sheet, price, line, 3)
+
+          line = line + 1
+        i = i + 1
 
 dt_end = (datetime.now() - dt_now)
-print("We spend: {}".format(dt_end.total_seconds()))
+print("We spend: {}".format(dt_end))
+
