@@ -292,7 +292,8 @@ class NhaThuocLongChau:
       if 'https://nhathuoclongchau.com/duoc-my-pham' in main_category:
         NhaThuocLongChau.find_category_duocmypham(soup_main_category_html)
       else:
-        drug_groups = soup_main_category_html.findAll("div", class_="col-xs-12 col-sm-15 ctg")
+        drug_groups = soup_main_category_html.findAll(
+            "div", class_="col-xs-12 col-sm-15 ctg")
         print("drug groups", drug_groups)
         for drug_group in drug_groups:
           druggroup = drug_group.a.get("href")
@@ -303,10 +304,13 @@ class NhaThuocLongChau:
             number_page = "?page={}".format(page)
             druggroup_per_page = druggroup + number_page
 
-            druggroup_soup = NhaThuocLongChau.requests_get_url(druggroup_per_page)
+            druggroup_soup = NhaThuocLongChau.requests_get_url(
+                druggroup_per_page)
 
             print("================= drug group perpage", druggroup_per_page)
-            products = druggroup_soup.findAll("div", class_="prd col-sm-3 col-xs-6 grid-group-item")
+
+            current = druggroup_soup.find("div", "tab-content-bcn tab-content-item current")
+            products = current.findAll("div", class_="prd col-sm-3 col-xs-6 grid-group-item")
 
             if not products or druggroup_per_page in "https://nhathuoclongchau.com/thuc-pham-chuc-nang/sua-296":
               break
@@ -322,7 +326,6 @@ if __name__ == "__main__":
 
   main_category_drug_urls = ['https://nhathuoclongchau.com/thuc-pham-chuc-nang/ho-tro-dac-biet?src=mega-menu', 'https://nhathuoclongchau.com/thuc-pham-chuc-nang/me-va-be?src=mega-menu', 'https://nhathuoclongchau.com/thuc-pham-chuc-nang/sinh-ly-noi-tiet-to?src=mega-menu',
                              'https://nhathuoclongchau.com/thuc-pham-chuc-nang/vitamin-thuoc-bo?src=mega-menu', 'https://nhathuoclongchau.com/thuc-pham-chuc-nang/lam-dep-tang-giam-can?src=mega-menu', 'https://nhathuoclongchau.com/duoc-my-pham', 'https://nhathuoclongchau.com/cham-soc-ca-nhan']
-
   line = 1
 
   NhaThuocLongChau.crawl_data_nhathuoclongchau(main_category_drug_urls)
