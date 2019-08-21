@@ -4,11 +4,6 @@ from bs4 import BeautifulSoup
 
 import re
 
-import xlwt
-from xlrd import open_workbook
-from xlutils.copy import copy as xl_copy
-from openpyxl.styles import Font
-
 import time
 import sys
 from datetime import datetime
@@ -124,6 +119,9 @@ import simplejson as json
 #           product_img_600x600 = None
 #         line = line + 1
 #       page = page + 1
+
+
+
 import psycopg2
 from psycopg2 import Error
 
@@ -150,7 +148,7 @@ class ConnectionPostgresQL:
     print("Successfully CREATE data Refer Pharmacies PostgresQL")
 
   def update_refer_pharmacies_data(self, pharmacy_id, pharmacy_name, pharmacy_price, pharmacy_unit, pharmacy_source, pharmacy_url, crawl_data, updated_at):
-    update_query = """ UPDATE refer_pharmacies SET pharmacy_name=%s, pharmacy_price=%s,       pharmacy_unit=%s, pharmacy_url=%s, crawl_data=%s, updated_at=%s WHERE pharmacy_id=%s and pharmacy_source=%s """
+    update_query = """ UPDATE refer_pharmacies SET pharmacy_name=%s, pharmacy_price=%s, pharmacy_unit=%s, pharmacy_url=%s, crawl_data=%s, updated_at=%s WHERE pharmacy_id=%s and pharmacy_source=%s """
 
     self.cursor.execute(update_query, (pharmacy_name, pharmacy_price, pharmacy_unit,
                                        pharmacy_url, json.dumps(crawl_data), updated_at, pharmacy_id, pharmacy_source))
@@ -175,10 +173,6 @@ class ConnectionPostgresQL:
     except (Exception, psycopg2.DatabaseError) as error:
       print(" --- Error while INSERT UPDATE refer_pharmacies table", error)
 
-    finally:
-      self.close_connection()
-
-
 class NhaThuocLongChau:
   def __init__(self, url):
     self.url = url
@@ -198,7 +192,7 @@ class NhaThuocLongChau:
     print("drug groups", drug_groups)
     return drug_groups
 
-  def info_product(prod):
+  def info_product(self, prod):
     global line
 
     product_url = prod.a.get("href")
@@ -235,7 +229,7 @@ class NhaThuocLongChau:
     created_at = datetime.now().ctime()
     updated_at = datetime.now().ctime()
 
-    ConnectionPostgresQL.insert_update_refer_pharmacies(ConnectionPostgresQL(), product_id, product_name, product_price, product_unit, product_source, product_url, crawl_data_json, created_at, updated_at)
+    ConnectionPostgresQL.insert_update_refer_pharmacies(self, product_id, product_name, product_price, product_unit, product_source, product_url, crawl_data_json, created_at, updated_at)
     ############ Go to Detail of Drug ###############
     product_detail_url = prod.find("a").get("href")
     detail_req = requests.get(
@@ -253,7 +247,7 @@ class NhaThuocLongChau:
       product_img_600x600 = None
     line = line + 1
 
-  def find_category_duocmypham(soup_main_category_html):
+  def find_category_duocmypham(self, soup_main_category_html):
     find_categories = soup_main_category_html.find(
         "div", "view-category").find_all("div", "col-xs-12 col-sm-15 ctg")
 
@@ -281,19 +275,18 @@ class NhaThuocLongChau:
             break
 
           for prod in products:
-            NhaThuocLongChau.info_product(prod)
+            NhaThuocLongChau.info_product(self, prod)
           page = page + 1
 
-  def crawl_data_nhathuoclongchau(main_category_drug_urls):
+  def crawl_data_nhathuoclongchau(self, main_category_drug_urls):
     for main_category in main_category_drug_urls:
       soup_main_category_html = NhaThuocLongChau.requests_get_url(
           main_category)
 
       if 'https://nhathuoclongchau.com/duoc-my-pham' in main_category:
-        NhaThuocLongChau.find_category_duocmypham(soup_main_category_html)
-      else:
-        drug_groups = soup_main_category_html.findAll(
-            "div", class_="col-xs-12 col-sm-15 ctg")
+        NhaThuocLongChau.find_category_duocmypham(self, soup_main_category_html)
+      elif 'https://nhathuoclongchau.com/cham-soc-ca-nhan' in main_category:
+        drug_groups = soup_main_category_html.findAll("div", class_="col-xs-12 col-sm-15 ctg")
         print("drug groups", drug_groups)
         for drug_group in drug_groups:
           druggroup = drug_group.a.get("href")
@@ -304,19 +297,40 @@ class NhaThuocLongChau:
             number_page = "?page={}".format(page)
             druggroup_per_page = druggroup + number_page
 
-            druggroup_soup = NhaThuocLongChau.requests_get_url(
-                druggroup_per_page)
+            druggroup_soup = NhaThuocLongChau.requests_get_url(druggroup_per_page)
 
             print("================= drug group perpage", druggroup_per_page)
+            products = druggroup_soup.findAll("div", class_="prd col-sm-3 col-xs-6")
 
+            if not products:
+              break
+
+            for prod in products:
+              NhaThuocLongChau.info_product(self, prod)
+            page = page + 1
+      else:
+        drug_groups = soup_main_category_html.findAll("div", class_="col-xs-12 col-sm-15 ctg")
+        print("drug groups", drug_groups)
+        for drug_group in drug_groups:
+          druggroup = drug_group.a.get("href")
+          page = 1
+
+          # druggroup with page
+          while True:
+            number_page = "?page={}".format(page)
+            druggroup_per_page = druggroup + number_page
+
+            druggroup_soup = NhaThuocLongChau.requests_get_url(druggroup_per_page)
+
+            print("================= drug group perpage", druggroup_per_page)
+            products = druggroup_soup.findAll("div", class_="prd col-sm-3 col-xs-6 grid-group-item")
             current = druggroup_soup.find("div", "tab-content-bcn tab-content-item current")
-            products = current.findAll("div", class_="prd col-sm-3 col-xs-6 grid-group-item")
 
             if not products or druggroup_per_page in "https://nhathuoclongchau.com/thuc-pham-chuc-nang/sua-296":
               break
 
             for prod in products:
-              NhaThuocLongChau.info_product(prod)
+              NhaThuocLongChau.info_product(self, prod)
             page = page + 1
 
 if __name__ == "__main__":
@@ -324,11 +338,11 @@ if __name__ == "__main__":
   dt_now = datetime.now()
   print("Start at: {}".format(dt_now))
 
-  main_category_drug_urls = ['https://nhathuoclongchau.com/thuc-pham-chuc-nang/ho-tro-dac-biet?src=mega-menu', 'https://nhathuoclongchau.com/thuc-pham-chuc-nang/me-va-be?src=mega-menu', 'https://nhathuoclongchau.com/thuc-pham-chuc-nang/sinh-ly-noi-tiet-to?src=mega-menu',
-                             'https://nhathuoclongchau.com/thuc-pham-chuc-nang/vitamin-thuoc-bo?src=mega-menu', 'https://nhathuoclongchau.com/thuc-pham-chuc-nang/lam-dep-tang-giam-can?src=mega-menu', 'https://nhathuoclongchau.com/duoc-my-pham', 'https://nhathuoclongchau.com/cham-soc-ca-nhan']
+  main_category_drug_urls = ['https://nhathuoclongchau.com/thuc-pham-chuc-nang/ho-tro-dac-biet?src=mega-menu', 'https://nhathuoclongchau.com/thuc-pham-chuc-nang/me-va-be?src=mega-menu', 'https://nhathuoclongchau.com/thuc-pham-chuc-nang/sinh-ly-noi-tiet-to?src=mega-menu', 'https://nhathuoclongchau.com/thuc-pham-chuc-nang/vitamin-thuoc-bo?src=mega-menu', 'https://nhathuoclongchau.com/thuc-pham-chuc-nang/lam-dep-tang-giam-can?src=mega-menu', 'https://nhathuoclongchau.com/duoc-my-pham', 'https://nhathuoclongchau.com/cham-soc-ca-nhan']
+
   line = 1
-
-  NhaThuocLongChau.crawl_data_nhathuoclongchau(main_category_drug_urls)
-
+  connection = ConnectionPostgresQL()
+  NhaThuocLongChau.crawl_data_nhathuoclongchau(connection, main_category_drug_urls)
+  connection.close_connection()
   dt_end = (datetime.now() - dt_now)
-  print("We spend: {}".format(dt_end.total_seconds()))
+  print("We spend: {} minute".format(dt_end))
