@@ -1,0 +1,19 @@
+&-crossout-line {
+    position: relative;
+    text-decoration: none;
+  }
+
+  &-crossout-line::before {
+    -webkit-transform: rotate(-10deg);
+    transform: rotate(-10deg);
+  }
+
+  &-crossout-line::before {
+    content: "";
+    position: absolute;
+    right: 0;
+    top: 50%;
+    width: 100%;
+    border-top: 2px solid;
+    border-color: #d72f1b;
+  }
