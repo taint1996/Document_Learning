@@ -1,0 +1,236 @@
+- content_for :meta_title, t('seo.checkout.title')
+- content_for :meta_description, t('seo.checkout.description')
+- content_for :meta_robots, "noindex, nofollow"
+
+
+= form_for @order, url: checkout_url, method: :post, html: {class: 'order-form'} do |f|
+  .checkout.container.main-container
+    .row
+      .col-12.checkout-bill.mb-3
+        .list-group-item.justify-content-between
+          .order-promo-code-top.mt-1 class=promo_code_bonus_display(@order)
+            label.font-weight-bold.mb-0 = t('cart.discount_code')
+            span.order-bonus-amount.float-right
+              = number_to_currency(-@order_bonus_amount)
+
+          .list-group-item.justify-content-between.product-with-discount-tablet.d-none.border.my-2
+
+          .transport-fee-form
+            label.text-dark.mb-0.font-weight-bold = t('cart.transport_fee')
+
+            .float-right
+              del.text-muted.small.mr-2.real-transport-fee = number_to_currency(@transport_fee)
+              span.font-weight-bold.mb-0.transport-fee = number_to_currency(0)
+
+          .total-no-discount.font-weight-bold
+            label.text-dark.mb-0 = t('cart.total')
+            span.pl-3.checkout-total.checkout-total-number.float-right data-total=@order_total = number_to_currency(@order_total)
+
+          .total-with-discount.font-weight-bold
+            label.text-dark.mb-0 = t('cart.total')
+            .float-right
+              span.pl-3.checkout-total-discount data-total=@order_with_discount = number_to_currency(@order_with_discount)
+      .col-md-7
+        .mb-4
+          h3 = t('cart.shipping_info')
+
+          .mb-2
+            = t('checkout.estimated_shipping_time')
+
+          = f.hidden_field :id, value: @order.id
+
+          .main-content
+            .text-right
+              small.text-muted.font-italic
+                i.fas.fa-exclamation-circle.mr-1
+                = raw t('fields_are_required')
+
+            = f.fields_for :shipping_infos, @shipping_info do |sf|
+              .form-group
+                = sf.label :name, t('user.customer_name'), class: 'required'
+                = sf.text_field :name,
+                                class: 'form-control',
+                                placeholder: t('checkout.helptext.name'),
+                                required: true
+
+              .row.mb-4
+                .col-sm-4.form-group
+                  = sf.label :phone_number, t('user.phone'), class: 'required'
+                  = sf.number_field :phone_number,
+                                    class: 'form-control',
+                                    placeholder: t('checkout.helptext.phone'),
+                                    inputmode: 'tel',
+                                    pattern: '/d*',
+                                    required: true
+
+                .col-sm-8.form-group
+                  = sf.label :email, t('user.email')
+                  = sf.email_field :email,
+                                    class: 'form-control',
+                                    placeholder: t('checkout.helptext.email'),
+                                    inputmode: 'email'
+
+              .form-group
+                = sf.label :address, class: 'required' do
+                  | #{t('user.shipping_address')}
+                  small.text-muted<
+                    | (#{t('user.shipping_address_helptext')})
+                = sf.text_field :address,
+                                class: 'form-control',
+                                required: true
+
+              .row.js-address
+                .col-md-4.form-group
+                  = sf.label :city_id, t('user.shipping_city'), class: 'required'
+                  = sf.select :city_id,
+                              Address.all_vietnamese_cities,
+                              { \
+                                include_blank: t('user.select_city') \
+                              },
+                              required: true,
+                              class: 'custom-select d-block js-address-city'
+
+                .col-md-4.form-group
+                  - districts = Address.sub_addresses_for_select(sf.object.city_id)
+                  = sf.label :district_id, t('user.shipping_district'), class: 'required'
+                  = sf.select :district_id,
+                              districts,
+                              { \
+                                include_blank: t('user.select_district') \
+                              },
+                              required: true,
+                              class: 'custom-select d-block js-address-district',
+                              disabled: districts.blank?
+
+                .col-md-4.form-group
+                  - wards = Address.sub_addresses_for_select(sf.object.district_id)
+                  = sf.label :ward_id, t('user.shipping_ward'), class: 'required'
+                  = sf.select :ward_id,
+                              wards,
+                              { \
+                                include_blank: t('user.select_ward') \
+                              },
+                              required: true,
+                              class: 'custom-select d-block js-address-ward',
+                              disabled: wards.blank?
+
+              .custom-control.custom-checkbox.mt-2
+                = check_box_tag :save_shipping_info, '1', true, class: 'custom-control-input'
+                = label_tag :save_shipping_info, t('user.save_shipping_info'), class: 'custom-control-label'
+
+        .mb-4
+          h3 = t('cart.payment_type')
+
+          .main-content
+            - Order.payment_type_names.each_with_index do |(payment, label), index|
+              .custom-control.custom-radio.js-payment-type[data-payment-type=payment]
+                = f.radio_button :payment_type,
+                                  payment,
+                                  class: 'custom-control-input js-payment-type-radio',
+                                  checked: payment_type_checked?(@order.payment_type, payment)
+
+                = f.label "payment_type_#{payment}", class: 'custom-control-label w-100' do
+                  = label
+
+                  - if payment == 'bank_transfer'
+                    |  (
+                    a[href='https://thuocsi.zendesk.com/hc/vi/articles/360029773811-Thanh-to%C3%A1n-b%E1%BA%B1ng-h%C3%ACnh-th%E1%BB%A9c-chuy%E1%BB%83n-kho%E1%BA%A3n-nh%C6%B0-th%E1%BA%BF-n%C3%A0o-' target='_blank']
+                      = t('order.bank_transfer_hint')
+                    | )
+                    div.discount-event.small
+                      .float-left.pr-2
+                        del
+                          span.checkout-total-number.text-muted.text-left.pr-2= number_to_currency(@order_total)
+                        span.checkout-total-discount= number_to_currency(@order_with_discount)
+
+                      small.text-muted[style="line-height: 2em"]
+                        | &lpar;&nbsp;
+                        = t('checkout.discount_05_percent')
+                        | &nbsp;&rpar;
+
+            .main-content.mt-2
+              | #{t('checkout.bank_account.name')}: #{t('checkout.bank_account.account_name')}
+              br
+              | #{t('checkout.bank_account.number')}: #{t('checkout.bank_account.account_number')}
+              br
+              | #{t('checkout.bank_account.vcb')}
+
+        .form-group
+          = f.label :note, "* #{t('cart.note_label')}"
+          = f.text_area :note,
+                      rows: 4,
+                      placeholder: t('cart.customer_note'),
+                      class: 'form-control'
+
+        - if current_user.cart.has_deal?
+          .mt-2.text-danger
+            i.fas.fa-exclamation-circle.mr-1
+            = t('checkout.cannot_edit_order_with_deal')
+
+        .form-group
+          .custom-control.custom-checkbox
+            = check_box_tag :terms_of_service, '1', true, class: 'custom-control-input', required: true
+            = label_tag :terms_of_service, raw(t('order.agree_terms_of_service')), class: 'custom-control-label'
+
+
+      .col-md-5.checkout-order-sticky.mb-3
+        .checkout-sticky
+          .mb-3.clearfix.checkout-order-title
+            .float-left
+              - order_items_count = current_user.cart.quantity_counter
+              span.h4.font-weight-bold
+                | #{t('cart.order')}
+              |  (#{order_items_count} #{t('cart.products')})
+            .float-right
+              a.btn.btn-primary.btn-sm[href=(cart_path)]
+                = t('cart.edit')
+
+          ul.checkout-items.list-group.ul-checkout-order-items.mb-2.border
+            .list-order-items
+              = render 'order/order_items'
+            li.checkout-loader.d-none
+              img.lozad.img-fluid[src=image_path('loader/checkout_loading.gif') alt='Loading...' title='Loading...']
+            = link_to t('checkout.view_more'), load_more_order_items_path(page: @order_items.current_page+1), id: "checkout-load-more-items", class: "btn btn-light p-1 d-none", remote: true
+
+          .list-group-item.justify-content-between.promotion-product.mb-2 class=promotion_product_display(@order)
+            .checkout-item-name.d-flex
+              = image_tag image_url("qua_tang.jpg"), class: 'promo-product-thumbnail mr-3', size: "50x50"
+              small.text-muted
+                a.promo_name[href="#"]
+                  = @order.promo_code&.code.to_s
+                br
+                .promo_desc
+                  = @order.promo_code&.description.to_s
+
+          .list-group-item.order-promo-code.mt-2 class=promo_code_bonus_display(@order)
+            label.font-weight-bold.mb-0
+              = t('cart.discount_code')
+            span.order-bonus-amount.float-right
+              = number_to_currency(-@order_bonus_amount)
+
+          .list-group-item.justify-content-between.product-with-discount.d-none.border.my-2
+            .d-flex
+              = image_tag url_for(@product_with_discount.thumbnail_image), class: 'admin-product-thumbnail mr-3', size: "50x50"
+              small.checkout-item-name.text-muted
+                = @product_with_discount.name
+            .checkout-item-subtotal.text-right.col-4
+              = number_to_currency(@order_with_discount - @order_total)
+
+          .list-group-item.justify-content-between.mt-2
+            .mb-1
+              label.text-dark.mb-0.font-weight-bold = t('cart.transport_fee')
+
+              .float-right
+                del.text-muted.small.mr-2.real-transport-fee = number_to_currency(@transport_fee)
+                span.font-weight-bold.mb-0.transport-fee = number_to_currency(0)
+
+            .total-no-discount.checkout-total.font-weight-bold
+              label.text-dark.mb-0 = t('cart.total')
+              span#checkout-total-cod.checkout-total-number.float-right data-total=@order_total = number_to_currency(@order_total)
+            .total-with-discount.checkout-total.font-weight-bold
+              label.text-dark.mb-0 = t('cart.total')
+              span#checkout-total-transfer.checkout-total-discount.float-right data-total=@order_with_discount = number_to_currency(@order_with_discount)
+
+      .col-12.mt-2.text-center.checkout-submit
+        button.btn.btn-secondary.btn-lg.js-checkout-submit[type='submit' data-disable-with=t('confirm.please_wait') data-toggle="tooltip" data-placement="top" data-title=(t('checkout.checkout_hint'))]
+          = t('cart.checkout')

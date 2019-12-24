@@ -1,0 +1,41 @@
+<div id='app-10'>
+  <ul>
+    <li v-for="product in products">
+      <!-- {{ product.quantity }} {{ product.name }} -->
+      <input type="number" v-model.number="product.quantity"> {{ product.name }}
+
+      <span v-if="product.quantity === 0">
+        - OUT OF STOCK
+      </span>
+      <button @click="product.quantity += 1">
+          Add
+        </button>
+    </li>
+  </ul>
+  <h2>Total Inventory: {{ totalProducts }}</h2>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/vue"></script>
+
+<script>
+  var app10 = new Vue({
+    el: '#app-10',
+    data: {
+      products: [],
+    },
+    computed: {
+      totalProducts() {
+        return this.products.reduce((sum, product) => {
+          return sum + product.quantity
+        }, 0)
+      }
+    },
+    created() {
+      fetch('http://api.myjson.com/bins/74l63')
+        .then(response => response.json())
+        .then(json => {
+          this.products = json.products
+        })
+    }
+  })
+</script>
