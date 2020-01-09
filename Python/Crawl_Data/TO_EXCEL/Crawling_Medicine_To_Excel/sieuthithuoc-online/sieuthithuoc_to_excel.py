@@ -3,6 +3,8 @@ from bs4 import BeautifulSoup
 
 import re
 
+from lxml import html
+
 import xlwt
 from xlrd import open_workbook
 from xlutils.copy import copy as xl_copy
@@ -10,8 +12,6 @@ from openpyxl.styles import Font
 
 import time
 import json
-
-from lxml import html
 
 class ToExcel:
   def write_row_to_excel(sheet, text_data, row, column):
@@ -28,54 +28,78 @@ class ToExcel:
       bsheet.row(0).write(col, header_name, style)
     book.save(excel_name_file)
 
-sheet_name = 'sieuthithuoc-online'
-excel_name_file = 'sieuthithuoc-online.xls'
+class SieuThiThuocOnline:
+  def requests_get_url(url, res):
+    res = requests.get(url, timeout=20, stream=True)
 
-ToExcel.create_headers_to_excel(sheet_name, excel_name_file)
+  def requests_get_url(self):
+    req_get = requests.get(self, timeout=20, stream=True)
+    html_soup = BeautifulSoup(req_get.text, "html.parser")
 
-url = 'https://sieuthithuoc.online'
-res = requests.get(url, timeout=20, stream=True)
-soup = BeautifulSoup(res.text, "html.parser")
+    return html_soup
 
-find_ul_class_pagination = soup.find('ul', class_='pagination')
-li_tags = find_ul_class_pagination.find_all('li')
+  def max_page():
+    url = 'https://sieuthithuoc.online'
 
-max_page = int(li_tags[-2].get_text())
+    soup = SieuThiThuocOnline.requests_get_url(url)
 
-line = 1
-for page in range(1, max_page + 1):
-  res = requests.get(f'https://sieuthithuoc.online/?page={page}', timeout=20, stream=True)
-  soup = BeautifulSoup(res.text, 'html.parser')
+    find_ul_class_pagination = soup.find('ul', class_='pagination')
+    li_tags = find_ul_class_pagination.find_all('li')
 
-  tree = html.fromstring(res.content)
+    return int(li_tags[-2].get_text())
 
-  script = tree.xpath('//script[contains(., "app")]/text()')[1]
+  def save_data_sieuthithuoc_to_excel():
+    line = 1
+    count_item = 0
 
-  remove_space_script = script.split('\n\t')[2].split('\t')[1]
-  data_split = remove_space_script.split('items: ')[1]
+    for page in range(1, SieuThiThuocOnline.max_page() + 1):
+      res = requests.get(f'https://sieuthithuoc.online/?page={page}', timeout=20, stream=True)
+      soup = BeautifulSoup(res.text, 'html.parser')
 
-  data = json.loads(data_split[:-1])['data']
+      tree = html.fromstring(res.content)
 
-  for item in data:
-    open_wb = open_workbook(excel_name_file, formatting_info=True)
-    wb_copy = xl_copy(open_wb)
-    sheet = wb_copy.get_sheet(0)
+      script = tree.xpath('//script[contains(., "app")]/text()')[1]
 
-    product_id = item['id']
+      remove_space_script = script.split('\n\t')[2].split('\t')[1]
+      data_split = remove_space_script.split('items: ')[1]
 
-    product_name = item['name']
-    product_price = item['price']
+      data = json.loads(data_split[:-1])['data']
 
-    product_type = item['type']
-    product_value = item['value']
-    product_unit = f'{item["value"]}/{item["type"]}'
+      for item in data:
+        open_wb = open_workbook(excel_name_file, formatting_info=True)
+        wb_copy = xl_copy(open_wb)
+        sheet = wb_copy.get_sheet(0)
 
-    print(f">>>>>>> {product_name} {product_price} {product_value} {product_unit}")
+        product_id = item['id']
 
-    ToExcel.write_row_to_excel(sheet, product_id, line, 0)
-    ToExcel.write_row_to_excel(sheet, product_name, line, 2)
-    ToExcel.write_row_to_excel(sheet, product_price, line, 3)
-    ToExcel.write_row_to_excel(sheet, product_unit, line, 4)
+        product_name = item['name']
+        product_price = item['price']
 
-    wb_copy.save(excel_name_file)
-    line = line + 1
+        product_type = item['type']
+        product_value = item['value']
+        product_unit = f'{item["value"]}/{item["type"]}'
+
+        print(f">>>>>>> {product_name} {product_price} {product_value} {product_unit}")
+
+        ToExcel.write_row_to_excel(sheet, product_id, line, 0)
+        ToExcel.write_row_to_excel(sheet, product_name, line, 2)
+        ToExcel.write_row_to_excel(sheet, product_price, line, 3)
+        ToExcel.write_row_to_excel(sheet, product_unit, line, 4)
+
+        count_item = count_item + 1;
+        wb_copy.save(excel_name_file)
+        line = line + 1
+    print('Total products is: {}'.format(count_item))
+
+if __name__ == "__main__":
+  sheet_name = 'sieuthithuoc-online'
+  excel_name_file = 'sieuthithuoc-online.xls'
+  ToExcel.create_headers_to_excel(sheet_name, excel_name_file)
+
+  start = time.time()
+  print("Start crawling at: {}".format(start))
+
+  SieuThiThuocOnline.save_data_sieuthithuoc_to_excel()
+  end_at = (time.time() - start) / 60
+
+  print("Finished Crawling Data at: {} minute".format(end_at))
