@@ -156,8 +156,6 @@ class GiaThuocHapu:
     real_data = re.sub(r'<i (.*?)></i>', "", data_remove_expire_date)
 
     data = json.loads(real_data)
-    # print(">>>>>>>>>>>>> data: {}", len(data))
-    # print(">>>>>>>>>>>>> data: {}", len(thumbs_data))
 
     results = []
     for i in range(len(data)):
@@ -204,7 +202,6 @@ class GiaThuocHapu:
 if __name__ == "__main__":
   sheet_name = 'giathuochapu'
   excel_name_file = '{}.xls'.format(sheet_name)
-  ToExcel.create_headers_to_excel(sheet_name, excel_name_file)
 
   form_data = {
     "log": 'loctai1995',
@@ -212,11 +209,13 @@ if __name__ == "__main__":
     "redirect_to": 'https://giathuochapu.com/dat-hang/'
   }
 
+  ToExcel.create_headers_to_excel(sheet_name, excel_name_file)
+
   url_order = form_data["redirect_to"]
   req = GiaThuocHapu.requests_get(url_order)
 
   start = timer()
-  print("Start crawling 00:00:00")
+  print("Start crawling at 00:00:00")
 
   results = GiaThuocHapu.get_results_giathuochapu(req)
   GiaThuocHapu.save_data_to_excel(results)
