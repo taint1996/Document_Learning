@@ -152,8 +152,9 @@ class GiaThuocHapu:
 
     thumbs_data = GiaThuocHapu.get_thumbs_data(script_replace_2)
     data_remove_thumb = re.sub(r'"thumb":"(.*?)",', "", script_replace_2)
-    data_remove_expire_date = re.sub(r'"expiration_date":"(.*?)",', "", data_remove_thumb)#.replace(r'<i class="fa fa-line-chart"></i>', '').replace(r'<i class="fa fa-long-arrow-up"></i>', '').replace('<i class="fa fa-long-arrow-down red"></i>', '')
+    data_remove_expire_date = re.sub(r'"expiration_date":"(.*?)",', "", data_remove_thumb)
     real_data = re.sub(r'<i (.*?)></i>', "", data_remove_expire_date)
+    #.replace(r'<i class="fa fa-line-chart"></i>', '').replace(r'<i class="fa fa-long-arrow-up"></i>', '').replace('<i class="fa fa-long-arrow-down red"></i>', '')
 
     data = json.loads(real_data)
 

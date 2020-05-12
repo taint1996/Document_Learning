@@ -58,8 +58,9 @@ for col, header_name in enumerate(headers):
 book.save("nhathuoc-pharmacity.xls")
 #########################################################
 
-url1 = "https://www.pharmacity.vn/danh-muc-san-pham/thuoc-khong-ke-don/"
-url2 = "https://www.pharmacity.vn/danh-muc-san-pham/cham-soc-suc-khoe/"
+# url1 = "https://www.pharmacity.vn/danh-muc-san-pham/thuoc-khong-ke-don/"
+# url2 = "https://www.pharmacity.vn/danh-muc-san-pham/cham-soc-suc-khoe/"
+url_all_product = "https://www.pharmacity.vn/san-pham/page/"
 
 # pharmacity_urls = [url1, url2]
 pharmacity_urls = [url2]
@@ -72,6 +73,8 @@ for url in pharmacity_urls:
   soup = BeautifulSoup(req_url.text, "html.parser")
   prod_category = soup.find("ul", "product-categories")
   line = 1
+
+  page_num = 1
   if url2 == url:
     ul_children = prod_category.find(
         "li", "cat-item cat-item-1594 current-cat cat-parent")
@@ -79,7 +82,6 @@ for url in pharmacity_urls:
     cate_items = find_ul_children.findAll("li", "cat-item")
 
     for cate in cate_items:
-      i = 1
       if "cat-parent" in cate.get("class"):
         pass
       else:
@@ -88,7 +90,7 @@ for url in pharmacity_urls:
         name_drug_group = cate.a.get_text(strip=True)
         print("url_cate_item", url_cate_item)
         while True:
-          page = 'page/{}'.format(i)
+          page = f'page/{page_num}'
           req_url_cate = requests.get(url_cate_item + page, stream=True, timeout=20)
 
           if req_url_cate.status_code == 404:
@@ -144,7 +146,7 @@ for url in pharmacity_urls:
             # Pharmacity.write_row_to_excel(sheet, price, line, 3)
 
             line = line + 1
-          i = i + 1
+          page_num = page_num + 1
   else:
     prod_child = prod_category.find("ul", "children")
 
