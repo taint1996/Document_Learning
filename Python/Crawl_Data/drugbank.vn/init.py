@@ -11,5 +11,3 @@ from openpyxl.styles import Font
 from timeit import default_timer as timer
 from datetime import timedelta, date, datetime
 import json
-
-from fuzzywuzzy import fuzz

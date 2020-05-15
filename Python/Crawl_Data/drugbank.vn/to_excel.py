@@ -17,3 +17,12 @@ class ToExcel:
     for col, header_name in enumerate(headers):
       bsheet.row(0).write(col, header_name, style)
     wb.save(excel_name_file)
+
+  def save_data_row_to_excel(row, data_infos, excel_name_file):
+    open_wb = open_workbook(excel_name_file, formatting_info=True)
+    wb_copy = xl_copy(open_wb)
+    sheet = wb_copy.get_sheet(0)
+
+    for i in range(len(data_infos)):
+      to_excel.write_row_to_excel(sheet, data_infos[i], row, i)
+    wb_copy.save(excel_name_file)
