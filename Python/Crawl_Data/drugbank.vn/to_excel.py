@@ -24,5 +24,5 @@ class ToExcel:
     sheet = wb_copy.get_sheet(0)
 
     for i in range(len(data_infos)):
-      to_excel.write_row_to_excel(sheet, data_infos[i], row, i)
+      ToExcel.write_row_to_excel(sheet, data_infos[i], row, i)
     wb_copy.save(excel_name_file)
