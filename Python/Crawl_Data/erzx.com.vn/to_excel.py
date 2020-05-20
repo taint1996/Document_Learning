@@ -23,6 +23,6 @@ class ToExcel:
     wb_copy = xl_copy(open_wb)
     sheet = wb_copy.get_sheet(0)
 
-    for i in range(len(data_infos)):
-      ToExcel.write_row_to_excel(sheet, data_infos[i], row, i)
+    for idx, data_info in enumerate(data_infos):
+      ToExcel.write_row_to_excel(sheet, data_infos[idx], row, idx)
     wb_copy.save(excel_name_file)

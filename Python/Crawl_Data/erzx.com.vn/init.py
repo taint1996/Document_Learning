@@ -15,8 +15,7 @@ from to_excel import ToExcel as ex
 
 url_login = "https://www.ezrx.com.vn/10_Member/member_p.asp?flag=log"
 url_main = "https://www.ezrx.com.vn/mainCommon.asp"
-url_prod = "https://www.ezrx.com.vn/11_GoodMall/goodmall_l.asp"
 
 s = requests.Session()
 
-payload={"tbxUserId":"30338855", "tbxPassword": "1234qwer"}
+payload={"tbxUserId":"30338855", "tbxPassword": "P@ssw0rdz"}
