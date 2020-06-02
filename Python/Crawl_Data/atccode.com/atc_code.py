@@ -6,12 +6,6 @@ class ATCCode:
         Thread.__init__()
         self.daemon = True
 
-    def start(thread_name):
-        t = Thread(target=func, name=f"Thread-{thread_name}")
-        t.start()
-        # do something
-        # then join()
-
     def request_url(url):
         global req
         try:
@@ -27,16 +21,16 @@ class ATCCode:
             pass
         return BeautifulSoup(req.content, 'lxml')
 
-    def get_text_li_tag(li_tag):
+    def get_text_li_tag(li_tag) -> str:
         return li_tag.get_text(strip=True)
 
     def code_dash_name_format(code, name):
         return f"{code.upper().strip()}-{name.title().strip()}"
 
-    def code_format(code_name):
+    def code_format(code_name) -> str:
         return re.sub(r"\s:\w+.*", "", code_name)
 
-    def name_format(code_name):
+    def name_format(code_name) -> str:
         return re.sub(r"(.*?):", "", code_name)
 
     def code_name_categories(a_tags):
@@ -81,53 +75,18 @@ class ATCCode:
 
         return [code_name_categories[0], code_name_categories[1], code_name_category_lv_3, '', '']
 
-    def save_data_from_all_li_last_ul_lv_3(all_li_from_last_ul_lv_3, line, excel_name_file):
-        for li in all_li_from_last_ul_lv_3:
-            code_name_category_lv_4 = li.get_text(
-                strip=True)
-
-            code_category_lv_4 = ATCCode.code_format(
-                code_name_category_lv_4)  # A01AA
-            name_category_lv_4 = ATCCode.name_format(
-                code_name_category_lv_4)
-
-            a_tag_category_lv_4 = li.find('a')
-
-            if len(code_category_lv_4) == 5:
-                if not a_tag_category_lv_4:
-                    soup_category_lv_4 = ATCCode.request_url(
-                        f"{url}{code_category_lv_4}")
-
-                    main_a_tags = soup_category_lv_4.find_all('ul')[
-                        1].find_all('a')
-                    code_name_categories = ATCCode.code_name_categories(
-                        main_a_tags)
-
-                    data = [code_name_categories[0], code_name_categories[1], code_name_categories[2],
-                            code_name_category_lv_4, '']
-
-                    ex.save_data_row_to_excel(
-                        line, data, excel_name_file)
-                    line = line + 1
-                    continue
-                else:
-                    ATCCode.save_final_level_w_medicines(code_category_lv_4, name_category_lv_4,
-                                                          line, excel_name_file)
-                    line = line + 1
-
     def save_final_level_w_medicines(code_category, name_category, line, excel_name_file):
         # -> V01AA01 or None
         ex.save_data_row_to_excel(line, ATCCode.data_category_w_medicines(
             code_category, name_category), excel_name_file)
-
+        
     def data_atc_code(excel_name_file):
-        # TODO: Need to use threading to update performance
         find_all_ul_tags_index_page = ATCCode.find_all_ul_index_page(url)
 
         #       A,            A01,         A01A,            A01AA,     A01AA01 ( Ten thuoc/ chat hoa hoc)
         # uses for lv 1, uses for lv 2, uses for lv 3, uses for lv 4, medicines
-
         line = 1
+
         for ul in find_all_ul_tags_index_page:
             li_tags = ul.find_all('li')
 
@@ -155,11 +114,10 @@ class ATCCode:
                         line = line + 1
                         continue
 
-                    url_lv_2 = f"{url}{code_category}"
-                    soup_category_lv_2 = ATCCode.request_url(url_lv_2)
+                    soup_category_lv_2 = ATCCode.request_url(
+                        f"{url}{code_category}")
                     get_last_ul_lv_2 = soup_category_lv_2.find_all('ul')[-1]
 
-                    # TODO: refactor to function
                     for li in get_last_ul_lv_2.find_all('li'):
                         code_name_category_lv_3 = li.get_text(strip=True)
 
@@ -188,39 +146,38 @@ class ATCCode:
 
                             # TODO: to a function
                             # find all ul at last to get category drug lv 3
-                            ATCCode.save_data_from_all_li_last_ul_lv_3(all_li_from_last_ul_lv_3, line, excel_name_file)
-                            # for li in all_li_from_last_ul_lv_3:
-                            #     code_name_category_lv_4 = li.get_text(
-                            #         strip=True)
+                            for li in all_li_from_last_ul_lv_3:
+                                code_name_category_lv_4 = li.get_text(
+                                    strip=True)
 
-                            #     code_category_lv_4 = ATCCode.code_format(
-                            #         code_name_category_lv_4)  # A01AA
-                            #     name_category_lv_4 = ATCCode.name_format(
-                            #         code_name_category_lv_4)
+                                code_category_lv_4 = ATCCode.code_format(
+                                    code_name_category_lv_4)  # A01AA
+                                name_category_lv_4 = ATCCode.name_format(
+                                    code_name_category_lv_4)
 
-                            #     a_tag_category_lv_4 = li.find('a')
+                                a_tag_category_lv_4 = li.find('a')
 
-                            #     if len(code_category_lv_4) == 5:
-                            #         if not a_tag_category_lv_4:
-                            #             soup_category_lv_4 = ATCCode.request_url(
-                            #                 f"{url}{code_category_lv_4}")
+                                if len(code_category_lv_4) == 5:
+                                    if not a_tag_category_lv_4:
+                                        soup_category_lv_4 = ATCCode.request_url(
+                                            f"{url}{code_category_lv_4}")
 
-                            #             main_a_tags = soup_category_lv_4.find_all('ul')[
-                            #                 1].find_all('a')
-                            #             code_name_categories = ATCCode.code_name_categories(
-                            #                 main_a_tags)
+                                        main_a_tags = soup_category_lv_4.find_all('ul')[
+                                            1].find_all('a')
+                                        code_name_categories = ATCCode.code_name_categories(
+                                            main_a_tags)
 
-                            #             data = [code_name_categories[0], code_name_categories[1], code_name_categories[2],
-                            #                     code_name_category_lv_4, '']
+                                        data = [code_name_categories[0], code_name_categories[1], code_name_categories[2],
+                                                code_name_category_lv_4, '']
 
-                            #             ex.save_data_row_to_excel(
-                            #                 line, data, excel_name_file)
-                            #             line = line + 1
-                            #             continue
-                            #         else:
-                            #             ATCCode.save_final_level_w_medicines(code_category_lv_4, name_category_lv_4,
-                            #                                                  line, excel_name_file)
-                            #             line = line + 1
+                                        ex.save_data_row_to_excel(
+                                            line, data, excel_name_file)
+                                        line = line + 1
+                                        continue
+                                    else:
+                                        ATCCode.save_final_level_w_medicines(code_category_lv_4, name_category_lv_4,
+                                                                             line, excel_name_file)
+                                        line = line + 1
 
                         # case A01AA
                         if len(code_category_lv_3) == 5:
