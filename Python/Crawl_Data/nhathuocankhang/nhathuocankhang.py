@@ -1,260 +1,233 @@
-import requests
-# import the beautiful soup library
-from bs4 import BeautifulSoup
+from init import *
+from to_excel import ToExcel as ex
 
-import re
+class NhaThuocAnKhang:
+    def __init__(self, url):
+      self.url = url
 
-import xlwt
-from xlrd import open_workbook
-from xlutils.copy import copy
-from openpyxl.styles import Font
+    def requests_get_url(url):
+        global req
 
-import time
+        try:
+          req = s.get(url, timeout=20, stream=True)
+        except requests.exceptions.ConnectionError as e:
+          print(f">>>> Requests Connection Error {e}. Try to connect again")
+          req = s.get(drug_url, timeout=20, stream=True)
+        except requests.exceptions.Timeout as e:
+          print(f">>>> Requests Timeout {e}. Try to connect again")
+          req = s.get(drug_url, timeout=20, stream=True)
+        except requests.exceptions.RequestException as e:
+          raise SystemExit(e)
+        except requests.exceptions.HTTPError as err:
+          raise SystemExit(err)
 
-class CrawlingNhaThuocAnKhang:
-  def __init__(self, url, post_url = "", name = ""):
-    self.url = url
-    self.post_url = post_url
-    self.name = name
+        soup = BeautifulSoup(req.content, "lxml")
+        return soup
 
-  def create_title_excel(self, sheet_name, excel_name):
-    book = xlwt.Workbook(encoding='utf-8', style_compression = 0)
-    sheet = book.add_sheet(sheet_name, cell_overwrite_ok = True)
+    def get_all_url_categories(drug_url):
+        soup_drug = NhaThuocAnKhang.requests_get_url(drug_url)
+        find_all_li_tags = soup_drug.find_all("li", class_="nonecate")
+        return list(map(lambda tag: tag.a, find_all_li_tags))
 
-    first_rows = ("homepage", "drugs_href", "drug_name", "img", "price", "producer", "made_in_country", "ingredient_and_use")
+    def get_categories_attr(a_tags, data_attr="") -> list:
+        return list(map(lambda a_tag: a_tag.get(data_attr), a_tags))
 
-    i = 0
-    # Title Default in first line
-    while i < len(first_rows):
-      # Bold text first rows
-      style = xlwt.XFStyle()
-      font = xlwt.Font()
-      font.bold = True
-      style.font = font
+    def get_categories_name(categories_url):
+        return list(map(lambda a_tag: a_tag.get_text(strip=True), categories_url))
 
+    def get_info_drug(attr_name):
+        return attr_name.find_next('div').get_text(strip=True)
 
-      a = sheet.write(0, i, first_rows[i], style=style)
-      i = i + 1
-    book.save("{}.xls".format(excel_name))
+    def get_info_w_name(soup_info, info_name):
+        detail_info = soup_info.find("strong", string=re.compile(r"{}".format(info_name)))
 
-  def start_request_get_home_page(self):
-    response = requests.get(self).text
-    soup = BeautifulSoup(response, "html.parser")
-    first_list = soup.find("nav")
+        if not detail_info:
+            detail_info = ""
+        else:
+            detail_info = NhaThuocAnKhang.get_info_drug(detail_info)
+        return detail_info
 
-    urls = []
+    def find_all_span_by_shortdesc(info_sell):
+        find_all_span = info_sell.find("div", class_="shortdesc").find_all("span")
+        del find_all_span[2] # remove category name
 
-    for item in first_list.find_all('li'):
-      get_urls_navbar = item.find('a').get("href")
-      urls.append("{}{}".format(self, get_urls_navbar))
-    return urls
+        return find_all_span
 
-  def start_request_get_list(self, url):
-    response = requests.get(self).text
-    soup = BeautifulSoup(response, "html.parser")
-    first_list = soup.find("div", id="product")
+    def get_price_product(soup_detail):
+        find_price_tag = soup_detail.find("div", class_="price")
 
-    # save to excel product url drugs
-    urls = []
-    names = []
-    prices = []
-    for item in first_list.find_all('li', {'class': ''}):
-      get_href_default = item.find('a').get("href") # Get all a href
+        prices = []
 
-      check_url = url in get_href_default
-      if check_url:
-        urls.append(get_href_default)
-      else:
-        get_href_default = urls.append("{}/{}".format(self, get_href_default.split("/")[2]))
+        for price, unit in zip(find_price_tag.find_all('strong'), find_price_tag.find_all('span', class_='unit')):
+            prices.append(f"{price.get_text(strip=True)}{unit.get_text(strip=True)}")
 
-      # get names
-      get_names = item.find('h3').text
-      names.append("".join(get_names.strip()))
+        return prices
 
-      # get price
-      get_price = item.find('div', class_="price").text
-      prices.append("".join(get_price.strip()))
+    ######################## Detail Drug: Price 1, price 2, packing, ingredient name, producer, made in ########################
+    def get_detail_drug(info_sell, soup_detail):
+        shortdesc_infos = NhaThuocAnKhang.find_all_span_by_shortdesc(info_sell)
 
-    return urls, names, prices
+        product_prices = NhaThuocAnKhang.get_price_product(soup_detail)
 
-  def start_requests_post_list(self, post_url, url):
-    n = 1
-    urls = []
-    names = []
-    prices = []
-    while n:
-      form_data = {
-        "Key": "",
-        "PageSize": "10",
-        "PageIndex": n,
-        "Category": "0",
-        "ListIsNotMedCate": "",
-        "IsFunctionFood": "True"
-      }
+        packing = re.sub(r"(.*?):\s", "", shortdesc_infos[0].get_text(strip=True))
+        ingredient_name = re.sub(r"(.*?):\s", "", shortdesc_infos[1].get_text(strip=True))
+        producer = re.sub(r"(.*?):\s", "", shortdesc_infos[-2].get_text(strip=True))
+        made_in = re.sub(r"Sản xuất tại", "", shortdesc_infos[-1].get_text(strip=True))
 
-      r = requests.post(post_url, data = form_data)
+        if len(product_prices) == 2:
+            return [product_prices[0], product_prices[1], packing, ingredient_name, producer, made_in]
+        else:
+            return [''.join(product_prices), '', packing, ingredient_name, producer, made_in]
 
-      if r.status_code == 200 and r.status_code is not None:
-        more_soup = BeautifulSoup(r.text, "html.parser")
+    ############################## INFO Drug (Ingredient, Uses, Dosage, Notice, Pharma) ##############################
+    def info_ingredient_uses_dosage(soup_info):
+        ingredient = NhaThuocAnKhang.get_info_w_name(soup_info, "Thành phần")
+        uses = NhaThuocAnKhang.get_info_w_name(soup_info, "Công dụng")
+        dosage = NhaThuocAnKhang.get_info_w_name(soup_info, "Liều dùng")
 
-        next_lists = more_soup.find("div", id="product")
+        return [ingredient, uses, dosage]
 
-        for item in next_lists.find_all('li', {'class': ''}):
-          more_item_urls = item.find('a').get("href")
+    def info_notice_caution_exp_to_use(soup_info):
+        note_when_using = NhaThuocAnKhang.get_info_w_name(soup_info, "Lưu ý khi sử dụng")
+        contraindicated = NhaThuocAnKhang.get_info_w_name(soup_info, "Chống chỉ định")
+        side_effects = NhaThuocAnKhang.get_info_w_name(soup_info, "Tác dụng phụ")
+        interaction_with_other_drugs = NhaThuocAnKhang.get_info_w_name(soup_info, "Tương tác với thuốc khác")
+        preservation = NhaThuocAnKhang.get_info_w_name(soup_info, "Bảo quản")
+        driver = NhaThuocAnKhang.get_info_w_name(soup_info, "Lái xe")
+        package = NhaThuocAnKhang.get_info_w_name(soup_info, "Đóng gói")
+        pregnancy = NhaThuocAnKhang.get_info_w_name(soup_info, "Thai kỳ")
+        exp_date = NhaThuocAnKhang.get_info_w_name(soup_info, "Hạn dùng")
 
-          check_url = url in more_item_urls
-          if check_url is False:
-            more_item_urls = "{}/{}".format(self, more_item_urls.split("/")[2])
-          urls.append(more_item_urls)
+        return [note_when_using, contraindicated, side_effects, interaction_with_other_drugs,
+                preservation, driver, package, pregnancy, exp_date]
 
-          # get names
-          get_names = item.find('h3').text
-          names.append("".join(get_names.strip()))
+    def info_pharma_drug(soup_info):
+        pharmacodynamic = NhaThuocAnKhang.get_info_w_name(soup_info, "Dược lực học")
+        pharmacokinetics = NhaThuocAnKhang.get_info_w_name(soup_info, "Dược động học")
+        pharmacological = NhaThuocAnKhang.get_info_w_name(soup_info, "Dược lý")
+        characteristics = NhaThuocAnKhang.get_info_w_name(soup_info, "Đặc điểm")
 
-          # get price
-          get_price = item.find('div', class_="price").text
-          prices.append("".join(get_price.strip()))
-      else:
-          break
-      n = n + 1
-    return urls, names, prices
+        return [pharmacodynamic, pharmacokinetics, pharmacological, characteristics]
 
-  def save_to_excel(self, sheet_name, data, row, column):
-    rb = open_workbook(sheet_name, formatting_info=True)
+    def info_ingredients_drug(soup_info):
+        info_ingredient_uses_dosage = NhaThuocAnKhang.info_ingredient_uses_dosage(soup_info)
+        info_notice_caution_exp_to_use = NhaThuocAnKhang.info_ingredient_uses_dosage(soup_info)
+        info_pharma = NhaThuocAnKhang.info_pharma_drug(soup_info)
 
-    if rb is not None:
-      r_sheet = rb.sheet_by_index(0)
-      wb = copy(rb)
-      sheet = wb.get_sheet(0)
+        return [*info_ingredient_uses_dosage, *info_notice_caution_exp_to_use, *info_pharma]
+    ##########################################################################################
 
-      i = 0
-      while i < len(data):
-        writing = sheet.write(row, column, data[i])
-        # print(len(sheet._Worksheet__rows)) # count row in sheet
-        # print(r_sheet.nrows)
-        wb.save(sheet_name)
-        i = i + 1
-        row = row + 1
+    def categories_info(drug_url):
+        categories_a_tag = NhaThuocAnKhang.get_all_url_categories(drug_url)
 
-  def save_home_to_excel(self, sheet_name, data, row, column):
-    rb = open_workbook(sheet_name, formatting_info=True)
+        categories_id = NhaThuocAnKhang.get_categories_attr(categories_a_tag, "data-id")
+        categories_name = NhaThuocAnKhang.get_categories_name(categories_a_tag)
+        categories_url = list(map(lambda category_url: f"{url}{category_url.get('href')}", categories_a_tag))
 
-    if rb is not None:
-      r_sheet = rb.sheet_by_index(0)
-      wb = copy(rb)
-      sheet = wb.get_sheet(0)
+        return [categories_id, categories_url, categories_name]
 
-      writing = sheet.write(row, column, data)
+    def url_drugs_list_by_category(soup_category):
+        category_li_tags_by_get = soup_category.find('ul', class_='cate')
 
-      wb.save(sheet_name)
+        if category_li_tags_by_get:
+            li_tags = category_li_tags_by_get.find_all("li")
+            return list(map(lambda li: f"{url}{li.a.get('href')}", li_tags))
+        else:
+            return False
 
-start = time.time()
-print("Start crawling at: {}".format(start))
+    def save_drug_info_to_excel(url_drugs_list_by_category, row, excel_name_file, categories):
+        for url_drug_w_get_category in url_drugs_list_by_category:
+            soup_detail_info = NhaThuocAnKhang.requests_get_url(url_drug_w_get_category)
 
-##### Get urls href base on navbar index page
-url = "https://www.nhathuocankhang.com"
-home = CrawlingNhaThuocAnKhang.start_request_get_home_page(url)
+            info_sell = soup_detail_info.find("aside", class_="infosell")
+            drug_name = info_sell.h1.get_text(strip=True)
 
-sheet_name = home[1].split("/")[-1]
-excel_name = home[1].split(".")[1] # nhathuocankhang
+            ######################## Detail Drug: Price 1, price 2, packing, ingredient name, producer, made in ########################
+            get_detail_drugs = NhaThuocAnKhang.get_detail_drug(info_sell, soup_detail_info)
+            #############################
 
-excel = CrawlingNhaThuocAnKhang.create_title_excel(url, sheet_name, excel_name)
-excel_name_file = "{}.xls".format(excel_name) # nhathuocankhang.xls
+            # TODO: detail drug: create folder images -> folder drug name -> image picture
+            # slidedetail = detail_soup.find("aside", class_="slidedetail")
+            # Download image by using urlretrieve(url, file_name)
+            # urllib.request.urlretrieve(img_url, "neustam-400mg-2-700x467.jpg")
 
-to_excel = CrawlingNhaThuocAnKhang.save_home_to_excel(url, excel_name_file, home[1], 1, 0)
-# ######################################## thuc-pham-chuc-nang ########################################
-get_defaults_page = CrawlingNhaThuocAnKhang.start_request_get_list(home[1], url)
-#### show more product list
-urls_show_more_list_page = CrawlingNhaThuocAnKhang.start_requests_post_list(home[1], "https://www.nhathuocankhang.com/aj/Category/Products", url)
+            # information drug and how to use drug
+            url_information_drug = f"{url}{soup_detail_info.find('a', class_='viewguide').get('href')}"
 
-# #### all url of thucphamchucnang
-all_urls_of_tpcn_products = get_defaults_page[0] + urls_show_more_list_page[0]
-# save drug href to excel
-drug_urls_to_excel = CrawlingNhaThuocAnKhang.save_to_excel(url, excel_name_file, all_urls_of_tpcn_products, 1, 1)
+            # info ingredients drug: https://www.nhathuocankhang.com/thuoc/thuoc-gian-co-waruwari-2mg-100-vien/thong-tin-cach-dung-thuoc?id=194335
+            soup_info = NhaThuocAnKhang.requests_get_url(url_information_drug)
+            info_ingredients_drug = NhaThuocAnKhang.info_ingredients_drug(soup_info)
 
-### Drug Information
-# name: Tên thuốc
-all_drug_names = get_defaults_page[1] + urls_show_more_list_page[1]
-drug_names_to_excel = CrawlingNhaThuocAnKhang.save_to_excel(url, excel_name_file, all_drug_names, 1, 2)
+            # Drug info: (Category id, category url, category name, product name, retail price, whosale price, packing, ingredient name, producer, made in, ingredient, uses, dosage, note when using, contraindicated, side effects, interaction_with_other_drugs, preservation, driver, package, pregnancy, exp_date, pharmacodynamic, pharmacokinetics, pharmacological, characteristics)
+            drug_infos = [*categories, drug_name, url_drug_w_get_category, *get_detail_drugs, *info_ingredients_drug]
 
-# price: Giá
-all_drug_prices = get_defaults_page[2] + urls_show_more_list_page[2]
-prices_to_excel = CrawlingNhaThuocAnKhang.save_to_excel(url, excel_name_file, all_drug_prices, 1, 4)
+            ex.save_data_row_to_excel(row, drug_infos, excel_name_file, 0)
+            row = row + 1
 
-details_item_rowinfo = []
-details_item_rowcontent = []
+    def save_data_to_excel(excel_name_file):
+      row = 1
 
-images = []
-producers = []
-mades_in = []
+      categories_id, categories_url, categories_name = NhaThuocAnKhang.categories_info(drug_url)
 
-for url in all_urls_of_tpcn_products:
-  response = requests.get(url.strip(), params=None)
-  soup = BeautifulSoup(response.text, 'html.parser')
+      for category_id, category_url, category_name in zip(categories_id, categories_url, categories_name):
+          categories = [category_id, category_name, category_url]
 
-  for data in soup.find_all('div', class_="rowinfo"):
-    # get mages
-    get_images = data.find('aside', class_="slidedetail").find_all('img')
-    for img in get_images:
-      get_src = img.get('src')
+          soup_category_by_get = NhaThuocAnKhang.requests_get_url(category_url)
+          url_drugs_list_by_get_category = NhaThuocAnKhang.url_drugs_list_by_category(soup_category_by_get)
 
-      if get_src:
-        images.append(get_src)
-      else:
-        get_src = None
-    # get Item info - thông tin sp
-    item_info = data.find_all('aside', class_="infosell")
-    details_item_rowinfo.append(str(item_info))
+          if url_drugs_list_by_get_category == False:
+              continue
 
-    # get Producer - Nhà sản xuất
-    get_producer = data.find('div', class_='shortdesc').find('span').text
-    text_producer = "Nhà sản xuất:"
-    check_producer = text_producer in get_producer
+          save_data_to_excel_by_get_category = NhaThuocAnKhang.save_drug_info_to_excel(url_drugs_list_by_get_category, row, excel_name_file, categories)
 
-    # nếu có <span> Nhà sản xuất
-    if check_producer is False:
-      get_producer = None
-    else:
-      get_producer = ("".join(get_producer.split(text_producer)))
-    producers.append(get_producer)
+          page_num = 1
+          while True:
+              params = {
+                "Key": "",
+                "PageSize": "10",
+                "PageIndex": page_num,
+                "Category": category_id,
+              }
 
-    # get Made in country - Sản xuất tại
-    get_mades_in = data.find('div', class_='shortdesc').find_all('span')
-    text_made_in = "Sản xuất tại"
-    check_made_in = text_made_in in get_mades_in[-1].text
+              req_category_drug = s.post(prod_url, data=params, timeout=20, stream=True)
 
-    if len(get_mades_in) > 1 and check_made_in:
-      get_mades_in = ("".join(get_mades_in[-1].text.split(text_made_in)))
-    else:
-      get_mades_in = None
-    mades_in.append(get_mades_in) ########
+              # If requests post category is 500 -> jump to another category
+              if req_category_drug.status_code == 500:
+                  break
 
-  # get Ingrediant and use - thành phần và công dụng
-  for data in soup.find_all('div', class_='rowcontent'):
-    get_row_contents = data.find('div', class_='content collapse')
+              soup_category_drug = BeautifulSoup(req_category_drug.content, "lxml")
+              url_drugs_list_by_post_category = NhaThuocAnKhang.url_drugs_list_by_category(soup_category_drug)
 
-    for tag in get_row_contents("style"):
-      if tag is not None:
-        tag.decompose()
+              if url_drugs_list_by_post_category == False:
+                  break
 
-    contents = get_row_contents.find_all([re.compile('^p'), re.compile('ul'), re.compile('li')])
+              for detail_url in url_drugs_list_by_post_category:
+                  soup_detail_info = NhaThuocAnKhang.requests_get_url(detail_url)
 
-    row_contents = []
-    for content in contents:
-      row_contents.append(u'{}'.format(content.text.strip()))
-    details_item_rowcontent.append(row_contents)
+                  info_sell = soup_detail_info.find("aside", class_="infosell")
+                  drug_name = info_sell.h1.get_text(strip=True)
 
-# print("============= Row info", details_item_rowinfo)
-# print("============= Image", images)
-# print("======== producer", producers)
-# print("======= made in", mades_in)
-# print("Data content", details_item_rowcontent)
+                  ######################## Detail Drug: Price 1, price 2, packing, ingredient name, producer, made in ########################
+                  get_detail_drugs = NhaThuocAnKhang.get_detail_drug(info_sell, soup_detail_info)
+                  #############################
 
-images_to_excel = CrawlingNhaThuocAnKhang.save_to_excel(home[1], excel_name_file, images, 1, 3)
-producers_to_excel = CrawlingNhaThuocAnKhang.save_to_excel(home[1], excel_name_file, producers, 1, 5)
-mades_in_to_excel = CrawlingNhaThuocAnKhang.save_to_excel(home[1], excel_name_file, mades_in, 1, 6)
-details_item_row_content_to_excel = CrawlingNhaThuocAnKhang.save_to_excel(home[1], excel_name_file, details_item_rowcontent, 1, 7)
+                  # TODO: detail drug: create folder images -> folder drug name -> image picture
+                  # slidedetail = detail_soup.find("aside", class_="slidedetail")
+                  # Download image by using urlretrieve(url, file_name)
+                  # urllib.request.urlretrieve(img_url, "neustam-400mg-2-700x467.jpg")
 
-end_at = (time.time() - start) / 60
-print("Finished Crawling Data at: {} minute".format(end_at))
-######################################################################################################
+                  # information drug and how to use drug
+                  url_information_drug = f"{url}{soup_detail_info.find('a', class_='viewguide').get('href')}"
+
+                  # info ingredients drug: https://www.nhathuocankhang.com/thuoc/thuoc-gian-co-waruwari-2mg-100-vien/thong-tin-cach-dung-thuoc?id=194335
+                  soup_info = NhaThuocAnKhang.requests_get_url(url_information_drug)
+                  info_ingredients_drug = NhaThuocAnKhang.info_ingredients_drug(soup_info)
+
+                  # Drug info: (Category id, category url, category name, product name, retail price, whosale price, packing, ingredient name, producer, made in, ingredient, uses, dosage, note when using, contraindicated, side effects, interaction_with_other_drugs, preservation, driver, package, pregnancy, exp_date, pharmacodynamic, pharmacokinetics, pharmacological, characteristics)
+                  drug_infos = [*categories, drug_name, detail_url, *get_detail_drugs, *info_ingredients_drug]
+
+                  print(f">>>>>>>>>>>>>> Drug info: {drug_name} ----- {detail_url}")
+                  ex.save_data_row_to_excel(row, drug_infos, excel_name_file, 0)
+                  row = row + 1
+              page_num = page_num + 1
+              params["PageIndex"] = page_num

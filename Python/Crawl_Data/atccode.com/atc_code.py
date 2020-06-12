@@ -1,6 +1,5 @@
 from init import *
 
-
 class ATCCode:
     def __init__(self):
         Thread.__init__()
@@ -79,7 +78,7 @@ class ATCCode:
         # -> V01AA01 or None
         ex.save_data_row_to_excel(line, ATCCode.data_category_w_medicines(
             code_category, name_category), excel_name_file)
-        
+
     def data_atc_code(excel_name_file):
         find_all_ul_tags_index_page = ATCCode.find_all_ul_index_page(url)
 
@@ -132,7 +131,6 @@ class ATCCode:
                             soup_category_lv_3 = ATCCode.request_url(
                                 f"{url}{code_category_lv_3}")
 
-                            # TODO: split to a function
                             if not category_lv_3_a_tag:
                                 data = ATCCode.data_category_lv_3_without_a_tag(
                                     category_lv_3_a_tag, code_name_category_lv_3)
@@ -144,7 +142,6 @@ class ATCCode:
                             all_li_from_last_ul_lv_3 = soup_category_lv_3.find_all(
                                 'ul')[-1].find_all('li')
 
-                            # TODO: to a function
                             # find all ul at last to get category drug lv 3
                             for li in all_li_from_last_ul_lv_3:
                                 code_name_category_lv_4 = li.get_text(

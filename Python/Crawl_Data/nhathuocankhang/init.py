@@ -14,5 +14,6 @@ import json
 
 url = "https://www.nhathuocankhang.com"
 drug_url = "https://www.nhathuocankhang.com/thuoc"
+prod_url = "https://www.nhathuocankhang.com/aj/Category/Products"
 
 s = requests.Session()
